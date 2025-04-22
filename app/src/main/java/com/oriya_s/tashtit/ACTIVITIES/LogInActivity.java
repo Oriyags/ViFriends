@@ -46,6 +46,8 @@ public class LogInActivity extends AppCompatActivity {
 
         initializeViews();
         setViewModel();
+
+        int i = 5;
     }
 
     protected void initializeViews() {
