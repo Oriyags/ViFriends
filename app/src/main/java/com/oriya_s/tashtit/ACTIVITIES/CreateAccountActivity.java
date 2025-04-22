@@ -22,8 +22,8 @@ import com.oriya_s.viewmodel.UsersViewmodel;
 
 public class CreateAccountActivity extends BaseActivity implements EntryValidation {
 
-    private EditText etUserName, etPassword, etEmail, etPhoneNumber, etLocation, etDOB;
-    private Button btnCreateAccount;
+    private EditText etUserName, etPassword, etConfirmPassword, etEmail, etPhoneNumber, etLocation, etDOB;
+    private Button btnCreateAccount, btnCancel;
     private UsersViewmodel usersViewmodel;
 
     @Override
@@ -46,11 +46,14 @@ public class CreateAccountActivity extends BaseActivity implements EntryValidati
     protected void initializeViews() {
         etUserName = findViewById(R.id.etUserName);
         etPassword = findViewById(R.id.etPassword);
+        etConfirmPassword = findViewById(R.id.etConfirmPassword);
         etEmail = findViewById(R.id.etEmail);
         etPhoneNumber = findViewById(R.id.etPhoneNumber);
         etLocation = findViewById(R.id.etLocation);
         etDOB = findViewById(R.id.etDOB);
         btnCreateAccount = findViewById(R.id.btnCreateAccount);
+        btnCancel = findViewById(R.id.btnCancel);
+
         setListeners();
     }
 
@@ -65,7 +68,6 @@ public class CreateAccountActivity extends BaseActivity implements EntryValidati
                 userProfile.setPhoneNumber(etPhoneNumber.getText().toString());
                 userProfile.setLocationID(etLocation.getText().toString());
 
-                // Avoid crash if DOB is empty
                 if (!etDOB.getText().toString().isEmpty()) {
                     userProfile.setDOB(Long.parseLong(etDOB.getText().toString()));
                 } else {
@@ -75,6 +77,8 @@ public class CreateAccountActivity extends BaseActivity implements EntryValidati
                 usersViewmodel.save(userProfile);
             }
         });
+
+        btnCancel.setOnClickListener(v -> finish());
     }
 
     protected void setViewModel() {
@@ -96,14 +100,13 @@ public class CreateAccountActivity extends BaseActivity implements EntryValidati
         });
     }
 
-
     private void showToast(String msg) {
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void setValidation() {
-        // Optional
+        // Optional override
     }
 
     @Override
@@ -120,6 +123,11 @@ public class CreateAccountActivity extends BaseActivity implements EntryValidati
 
         if (etPassword.getText().toString().length() < 4) {
             etPassword.setError("Password must be at least 4 characters");
+            return false;
+        }
+
+        if (!etPassword.getText().toString().equals(etConfirmPassword.getText().toString())) {
+            etConfirmPassword.setError("Passwords do not match");
             return false;
         }
 
