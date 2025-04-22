@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">ViFriends</string>
+    <string name="email_hint">Email</string>
+    <string name="password_hint">Password</string>
+    <string name="remember_me">Remember me</string>
+    <string name="login">Login</string>
+    <string name="register">Register</string>
+    <string name="register_prompt">Dont have an account? Click here to register.</string>
+</resources>

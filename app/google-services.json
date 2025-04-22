@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "549158463756",
+    "project_id": "vifriends-6e4f2",
+    "storage_bucket": "vifriends-6e4f2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:549158463756:android:12f54c525bafd83e658129",
+        "android_client_info": {
+          "package_name": "com.oriya_s.tashtit"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCOTTgX3R9P5NLBxRcPRCVwOpzCk7lfhjc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ACTIVITIES.CreateAccountActivity">
+
+    <TextView
+        android:id="@+id/tvCreateAccount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="36dp"
+        android:gravity="center"
+        android:text="Create an account"
+        android:textSize="60sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <EditText
+        android:id="@+id/etUserName"
+        android:layout_width="385sp"
+        android:layout_height="60sp"
+        android:layout_marginTop="32dp"
+        android:ems="10"
+        android:hint="User Name..."
+        android:inputType="textPersonName"
+        android:textColorHint="#8A7F7F"
+        app:layout_constraintEnd_toEndOf="@+id/tvCreateAccount"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvCreateAccount" />
+
+    <EditText
+        android:id="@+id/etPassword"
+        android:layout_width="385sp"
+        android:layout_height="60sp"
+        android:layout_marginTop="4dp"
+        android:ems="10"
+        android:hint="Password..."
+        android:inputType="textPassword"
+        android:textColorHint="#8A7F7F"
+        app:layout_constraintEnd_toEndOf="@+id/etUserName"
+        app:layout_constraintStart_toStartOf="@+id/etUserName"
+        app:layout_constraintTop_toBottomOf="@+id/etUserName" />
+
+    <EditText
+        android:id="@+id/etEmail"
+        android:layout_width="385sp"
+        android:layout_height="60sp"
+        android:layout_marginTop="8dp"
+        android:ems="10"
+        android:hint="Email..."
+        android:inputType="textEmailAddress"
+        android:textColorHint="#8A7F7F"
+        app:layout_constraintEnd_toEndOf="@+id/etPassword"
+        app:layout_constraintStart_toStartOf="@+id/etPassword"
+        app:layout_constraintTop_toBottomOf="@+id/etPassword" />
+
+    <EditText
+        android:id="@+id/etPhoneNumber"
+        android:layout_width="385sp"
+        android:layout_height="60sp"
+        android:layout_marginTop="8dp"
+        android:ems="10"
+        android:hint="Phone Number..."
+        android:inputType="phone"
+        android:textColorHint="#8A7F7F"
+        app:layout_constraintEnd_toEndOf="@+id/etEmail"
+        app:layout_constraintStart_toStartOf="@+id/etEmail"
+        app:layout_constraintTop_toBottomOf="@+id/etEmail" />
+
+    <EditText
+        android:id="@+id/etLocation"
+        android:layout_width="385sp"
+        android:layout_height="60sp"
+        android:layout_marginTop="8dp"
+        android:ems="10"
+        android:hint="Location..."
+        android:inputType="text"
+        android:textColorHint="#8A7F7F"
+        app:layout_constraintEnd_toEndOf="@+id/etPhoneNumber"
+        app:layout_constraintStart_toStartOf="@+id/etPhoneNumber"
+        app:layout_constraintTop_toBottomOf="@+id/etPhoneNumber" />
+
+    <EditText
+        android:id="@+id/etDOB"
+        android:layout_width="385sp"
+        android:layout_height="60sp"
+        android:layout_marginTop="8dp"
+        android:ems="10"
+        android:hint="Date Of Birth (DDMMYYYY)..."
+        android:inputType="number"
+        android:textColorHint="#8A7F7F"
+        app:layout_constraintEnd_toEndOf="@+id/etLocation"
+        app:layout_constraintStart_toStartOf="@+id/etLocation"
+        app:layout_constraintTop_toBottomOf="@+id/etLocation" />
+
+    <Button
+        android:id="@+id/btnCreateAccount"
+        android:layout_width="182dp"
+        android:layout_height="56dp"
+        android:layout_marginTop="28dp"
+        android:text="Create Account"
+        app:layout_constraintEnd_toEndOf="@+id/etDOB"
+        app:layout_constraintStart_toStartOf="@+id/etDOB"
+        app:layout_constraintTop_toBottomOf="@+id/etDOB" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
