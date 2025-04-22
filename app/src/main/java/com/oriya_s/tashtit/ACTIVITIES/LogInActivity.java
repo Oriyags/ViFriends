@@ -2,12 +2,12 @@ package com.oriya_s.tashtit.ACTIVITIES;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ProgressBar;
@@ -18,10 +18,12 @@ import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.oriya_s.model.User;
 import com.oriya_s.tashtit.R;
-import com.oriya_s.viewmodel.LoginViewmodel;
+import com.oriya_s.viewmodel.UsersViewmodel;
 
 public class LogInActivity extends AppCompatActivity {
 
@@ -30,7 +32,7 @@ public class LogInActivity extends AppCompatActivity {
     private Button btnLogin, btnRegister;
     private ProgressBar progressBar;
 
-    private LoginViewmodel loginViewModel;
+    private UsersViewmodel loginViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,8 +48,6 @@ public class LogInActivity extends AppCompatActivity {
 
         initializeViews();
         setViewModel();
-
-        int i = 5;
     }
 
     protected void initializeViews() {
@@ -87,19 +87,16 @@ public class LogInActivity extends AppCompatActivity {
     }
 
     protected void setViewModel() {
-        loginViewModel = new ViewModelProvider(this).get(LoginViewmodel.class);
+        loginViewModel = new ViewModelProvider(this).get(UsersViewmodel.class);
 
-        loginViewModel.getLoginResult().observe(this, isSuccess -> {
-            btnLogin.setEnabled(true);
-            progressBar.setVisibility(View.GONE);
-
-            if (isSuccess) {
+        loginViewModel.getLiveDataEntity().observe(this, new Observer<User>() {
+            @Override
+            public void onChanged(User user) {
+                Toast.makeText(LogInActivity.this, (user != null) ? "Login success" : "Login failure", Toast.LENGTH_LONG).show();
                 startActivity(new Intent(LogInActivity.this, HomeActivity.class));
-                finish();
-            } else {
-                showStyledToast("Login failed");
             }
         });
+
     }
 
     private void showStyledToast(String message) {

@@ -10,7 +10,7 @@ public class HomeViewmodel extends ViewModel {
     public LiveData<String> getUserName() {
         return userName;
     }
-// Example :)
+    // Example :)
     public void loadUserName() {
         userName.setValue("Oriya");
     }

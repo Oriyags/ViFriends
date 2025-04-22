@@ -11,6 +11,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.oriya_s.helper.inputValidators.EntryValidation;
@@ -39,7 +40,6 @@ public class CreateAccountActivity extends BaseActivity implements EntryValidati
 
         initializeViews();
         setViewModel();
-        observeViewModel();
     }
 
     @Override
@@ -79,21 +79,23 @@ public class CreateAccountActivity extends BaseActivity implements EntryValidati
 
     protected void setViewModel() {
         usersViewmodel = new ViewModelProvider(this).get(UsersViewmodel.class);
-    }
 
-    private void observeViewModel() {
-        usersViewmodel.getRegistrationResult().observe(this, success -> {
-            if (success) {
-                showToast("User registered successfully!");
-                Intent intent = new Intent(this, LogInActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(intent);
-                finish();
-            } else {
-                showToast("Registration failed: Email may already be in use.");
+        usersViewmodel.getLiveDataSuccess().observe(this, new Observer<Boolean>() {
+            @Override
+            public void onChanged(Boolean aBoolean) {
+                if (aBoolean) {
+                    showToast("User registered successfully!");
+                    Intent intent = new Intent(CreateAccountActivity.this, LogInActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish();
+                } else {
+                    showToast("Registration failed: Email may already be in use.");
+                }
             }
         });
     }
+
 
     private void showToast(String msg) {
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
