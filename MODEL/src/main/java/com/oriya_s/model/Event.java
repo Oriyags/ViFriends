@@ -8,6 +8,7 @@ public class Event {
     private String date;
     private String visibility;
     private String imageUri;
+    private String videoUri;
 
     public Event(String name, String description, String date, String visibility, String imageUri) {
         this.name = name;
@@ -17,41 +18,49 @@ public class Event {
         this.imageUri = imageUri;
     }
 
-    // 🧾 Getters & Setters
-    public String getName() {
-        return name;
+    // Video setter
+    public void setVideoUri(String videoUri) {
+        this.videoUri = videoUri;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public String getVideoUri() {
+        return videoUri;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public String getDescription() {
         return description;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
     public String getDate() {
         return date;
-    }
-
-    public void setDate(String date) {
-        this.date = date;
     }
 
     public String getVisibility() {
         return visibility;
     }
 
-    public void setVisibility(String visibility) {
-        this.visibility = visibility;
-    }
-
     public String getImageUri() {
         return imageUri;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
+
+    public void setVisibility(String visibility) {
+        this.visibility = visibility;
     }
 
     public void setImageUri(String imageUri) {
@@ -67,6 +76,7 @@ public class Event {
                 Objects.equals(description, event.description) &&
                 Objects.equals(date, event.date) &&
                 Objects.equals(visibility, event.visibility) &&
-                Objects.equals(imageUri, event.imageUri);
+                Objects.equals(imageUri, event.imageUri) &&
+                Objects.equals(videoUri, event.videoUri);
     }
 }

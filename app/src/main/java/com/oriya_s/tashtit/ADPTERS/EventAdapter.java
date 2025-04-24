@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.VideoView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -43,15 +44,23 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     @Override
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
         Event event = eventList.get(position);
+
         holder.name.setText(event.getName() + " (" + event.getDate() + ")");
         holder.description.setText(event.getDescription());
         holder.visibility.setText("Visible to: " + event.getVisibility());
 
-        if (event.getImageUri() != null && !event.getImageUri().isEmpty()) {
+        if (event.getVideoUri() != null && !event.getVideoUri().isEmpty()) {
+            holder.videoView.setVisibility(View.VISIBLE);
+            holder.videoView.setVideoURI(Uri.parse(event.getVideoUri()));
+            holder.videoView.seekTo(1);
+            holder.image.setVisibility(View.GONE);
+        } else if (event.getImageUri() != null && !event.getImageUri().isEmpty()) {
             holder.image.setVisibility(View.VISIBLE);
             holder.image.setImageURI(Uri.parse(event.getImageUri()));
+            holder.videoView.setVisibility(View.GONE);
         } else {
             holder.image.setVisibility(View.GONE);
+            holder.videoView.setVisibility(View.GONE);
         }
 
         holder.deleteButton.setOnClickListener(v -> listener.onDelete(position));
@@ -66,6 +75,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         TextView name, description, visibility;
         ImageButton deleteButton;
         ImageView image;
+        VideoView videoView;
 
         EventViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -73,6 +83,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             description = itemView.findViewById(R.id.event_description);
             visibility = itemView.findViewById(R.id.event_visibility);
             image = itemView.findViewById(R.id.event_image);
+            videoView = itemView.findViewById(R.id.event_video);
             deleteButton = itemView.findViewById(R.id.event_delete_button);
         }
     }

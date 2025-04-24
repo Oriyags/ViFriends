@@ -101,8 +101,11 @@ public class HomeActivity extends AppCompatActivity {
             String date = data.getStringExtra("event_date");
             String visibility = data.getStringExtra("event_visibility");
             String imageUri = data.getStringExtra("event_image");
+            String videoUri = data.getStringExtra("event_video");
 
             Event event = new Event(name, description, date, visibility, imageUri);
+            event.setVideoUri(videoUri);
+
             eventList.add(event);
             adapter.notifyItemInserted(eventList.size() - 1);
         }

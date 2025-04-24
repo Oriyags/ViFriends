@@ -4,6 +4,7 @@ import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.*;
 
 import androidx.annotation.Nullable;
@@ -16,14 +17,17 @@ import java.util.Calendar;
 public class AddEventActivity extends AppCompatActivity {
 
     private EditText eventNameInput, eventDescriptionInput;
-    private Button pickDateButton, chooseFriendsButton, saveButton;
+    private Button pickDateButton, chooseFriendsButton, saveButton, pickVideoButton;
     private TextView dateText;
     private RadioGroup visibilityGroup;
     private ImageView selectedImage;
+    private VideoView selectedVideo;
 
     private String imageUri = "";
+    private String videoUri = "";
 
     private static final int IMAGE_PICK_CODE = 101;
+    private static final int VIDEO_PICK_CODE = 202;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,9 +42,12 @@ public class AddEventActivity extends AppCompatActivity {
         chooseFriendsButton = findViewById(R.id.choose_friends_button);
         saveButton = findViewById(R.id.save_event_button);
         selectedImage = findViewById(R.id.selected_image);
+        pickVideoButton = findViewById(R.id.pick_video_button);
+        selectedVideo = findViewById(R.id.selected_video);
 
         pickDateButton.setOnClickListener(v -> showDatePicker());
         selectedImage.setOnClickListener(v -> pickImageFromGallery());
+        pickVideoButton.setOnClickListener(v -> pickVideoFromGallery());
         saveButton.setOnClickListener(v -> saveEvent());
     }
 
@@ -58,14 +65,28 @@ public class AddEventActivity extends AppCompatActivity {
         startActivityForResult(intent, IMAGE_PICK_CODE);
     }
 
+    private void pickVideoFromGallery() {
+        Intent intent = new Intent(Intent.ACTION_PICK);
+        intent.setType("video/*");
+        startActivityForResult(intent, VIDEO_PICK_CODE);
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == IMAGE_PICK_CODE && resultCode == RESULT_OK && data != null) {
+        if (resultCode == RESULT_OK && data != null) {
             Uri selected = data.getData();
-            imageUri = selected.toString();
-            selectedImage.setImageURI(selected);
+
+            if (requestCode == IMAGE_PICK_CODE) {
+                imageUri = selected.toString();
+                selectedImage.setImageURI(selected);
+            } else if (requestCode == VIDEO_PICK_CODE) {
+                videoUri = selected.toString();
+                selectedVideo.setVisibility(View.VISIBLE);
+                selectedVideo.setVideoURI(selected);
+                selectedVideo.seekTo(1); // תצוגה מקדימה
+            }
         }
     }
 
@@ -93,6 +114,7 @@ public class AddEventActivity extends AppCompatActivity {
         resultIntent.putExtra("event_date", date);
         resultIntent.putExtra("event_visibility", visibility);
         resultIntent.putExtra("event_image", imageUri);
+        resultIntent.putExtra("event_video", videoUri);
 
         setResult(RESULT_OK, resultIntent);
         finish();

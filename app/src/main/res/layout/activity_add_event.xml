@@ -9,12 +9,14 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <!-- Event Name -->
         <EditText
             android:id="@+id/event_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Event Name" />
 
+        <!-- Event Description -->
         <EditText
             android:id="@+id/event_description"
             android:layout_width="match_parent"
@@ -23,6 +25,7 @@
             android:inputType="textMultiLine"
             android:minLines="3" />
 
+        <!-- Date Picker -->
         <Button
             android:id="@+id/pick_date_button"
             android:layout_width="match_parent"
@@ -36,6 +39,7 @@
             android:text="No date selected"
             android:paddingTop="8dp" />
 
+        <!-- Visibility Options -->
         <RadioGroup
             android:id="@+id/visibility_group"
             android:layout_width="match_parent"
@@ -54,6 +58,7 @@
                 android:text="Visible to selected friends" />
         </RadioGroup>
 
+        <!-- Image Picker Preview -->
         <ImageView
             android:id="@+id/selected_image"
             android:layout_width="match_parent"
@@ -62,12 +67,31 @@
             android:background="#CCCCCC"
             android:scaleType="centerCrop" />
 
+        <!-- Pick Video Button -->
+        <Button
+            android:id="@+id/pick_video_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Pick Video"
+            android:layout_marginTop="12dp" />
+
+        <!-- Video Preview -->
+        <VideoView
+            android:id="@+id/selected_video"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginTop="8dp"
+            android:visibility="gone"
+            android:background="#CCCCCC" />
+
+        <!-- Choose Friends (Optional Logic) -->
         <Button
             android:id="@+id/choose_friends_button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Choose Friends" />
 
+        <!-- Save Button -->
         <Button
             android:id="@+id/save_event_button"
             android:layout_width="match_parent"
