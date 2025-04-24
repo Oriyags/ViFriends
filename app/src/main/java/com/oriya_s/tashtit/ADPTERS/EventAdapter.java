@@ -1,10 +1,12 @@
 package com.oriya_s.tashtit.ADPTERS;
 
 import android.content.Context;
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -17,14 +19,13 @@ import java.util.List;
 
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHolder> {
 
-    private List<Event> eventList;
-    private Context context;
+    private final List<Event> eventList;
+    private final Context context;
+    private final OnEventActionListener listener;
 
     public interface OnEventActionListener {
         void onDelete(int position);
     }
-
-    private OnEventActionListener listener;
 
     public EventAdapter(Context context, List<Event> eventList, OnEventActionListener listener) {
         this.context = context;
@@ -42,9 +43,16 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     @Override
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
         Event event = eventList.get(position);
-        holder.name.setText(event.name + " (" + event.date + ")");
-        holder.description.setText(event.description);
-        holder.visibility.setText("Visible to: " + event.visibility);
+        holder.name.setText(event.getName() + " (" + event.getDate() + ")");
+        holder.description.setText(event.getDescription());
+        holder.visibility.setText("Visible to: " + event.getVisibility());
+
+        if (event.getImageUri() != null && !event.getImageUri().isEmpty()) {
+            holder.image.setVisibility(View.VISIBLE);
+            holder.image.setImageURI(Uri.parse(event.getImageUri()));
+        } else {
+            holder.image.setVisibility(View.GONE);
+        }
 
         holder.deleteButton.setOnClickListener(v -> listener.onDelete(position));
     }
@@ -57,12 +65,14 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     static class EventViewHolder extends RecyclerView.ViewHolder {
         TextView name, description, visibility;
         ImageButton deleteButton;
+        ImageView image;
 
         EventViewHolder(@NonNull View itemView) {
             super(itemView);
             name = itemView.findViewById(R.id.event_title);
             description = itemView.findViewById(R.id.event_description);
             visibility = itemView.findViewById(R.id.event_visibility);
+            image = itemView.findViewById(R.id.event_image);
             deleteButton = itemView.findViewById(R.id.event_delete_button);
         }
     }

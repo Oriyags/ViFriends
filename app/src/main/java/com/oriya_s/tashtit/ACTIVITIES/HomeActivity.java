@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.ImageButton;
-import android.widget.GridView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -14,8 +13,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.navigation.NavigationView;
-import com.oriya_s.tashtit.ADPTERS.EventAdapter;
 import com.oriya_s.model.Event;
+import com.oriya_s.tashtit.ADPTERS.EventAdapter;
 import com.oriya_s.tashtit.R;
 
 import java.util.ArrayList;
@@ -96,13 +95,14 @@ public class HomeActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == ADD_EVENT_REQUEST && resultCode == RESULT_OK) {
+        if (requestCode == ADD_EVENT_REQUEST && resultCode == RESULT_OK && data != null) {
             String name = data.getStringExtra("event_name");
             String description = data.getStringExtra("event_description");
             String date = data.getStringExtra("event_date");
             String visibility = data.getStringExtra("event_visibility");
+            String imageUri = data.getStringExtra("event_image");
 
-            Event event = new Event(name, description, date, visibility);
+            Event event = new Event(name, description, date, visibility, imageUri);
             eventList.add(event);
             adapter.notifyItemInserted(eventList.size() - 1);
         }
