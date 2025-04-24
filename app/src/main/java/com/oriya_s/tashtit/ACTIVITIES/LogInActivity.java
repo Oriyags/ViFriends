@@ -22,10 +22,11 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.oriya_s.model.User;
+import com.oriya_s.tashtit.ACTIVITIES.BASE.BaseActivity;
 import com.oriya_s.tashtit.R;
 import com.oriya_s.viewmodel.UsersViewmodel;
 
-public class LogInActivity extends AppCompatActivity {
+public class LogInActivity extends BaseActivity {
 
     private EditText etEmail, etPassword;
     private SwitchCompat swSaveUser;

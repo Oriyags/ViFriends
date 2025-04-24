@@ -27,7 +27,7 @@ public class MainActivity extends BaseActivity {
         });
 
         new Handler().postDelayed(() -> {
-            Intent intent = new Intent(MainActivity.this, LogInActivity.class);
+            Intent intent = new Intent(MainActivity.this, HomeActivity.class);
             startActivity(intent);
             finish();
         }, 5000);
