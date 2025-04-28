@@ -9,6 +9,8 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.oriya_s.tashtit.R;
 import com.oriya_s.tashtit.ACTIVITIES.BASE.BaseActivity;
 
@@ -27,10 +29,20 @@ public class MainActivity extends BaseActivity {
         });
 
         new Handler().postDelayed(() -> {
-            Intent intent = new Intent(MainActivity.this, HomeActivity.class);
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
+            Intent intent;
+            if (currentUser != null) {
+                // User is already logged in
+                intent = new Intent(MainActivity.this, LogInActivity.class);
+            } else {
+                // User not logged in
+                intent = new Intent(MainActivity.this, LogInActivity.class);
+            }
+
             startActivity(intent);
             finish();
-        }, 5000);
+        }, 2000); // 2 seconds splash
     }
 
     @Override

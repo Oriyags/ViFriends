@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -21,26 +22,39 @@
         android:text="Description" />
 
     <TextView
+        android:id="@+id/event_date"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Date" />
+
+    <TextView
         android:id="@+id/event_visibility"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Visibility" />
 
+    <!-- Optional image preview -->
     <ImageView
-        android:id="@+id/event_image"
+        android:id="@+id/event_image_preview"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
+        android:layout_height="160dp"
         android:layout_marginTop="8dp"
         android:scaleType="centerCrop"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:background="#CCCCCC" />
 
-    <VideoView
-        android:id="@+id/event_video"
-        android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:layout_marginTop="8dp"
-        android:visibility="gone" />
+    <!-- Optional video label (or preview if needed later) -->
+    <TextView
+        android:id="@+id/event_video_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🎬 Video attached"
+        android:visibility="gone"
+        android:textColor="#444"
+        android:textStyle="italic"
+        android:paddingTop="4dp" />
 
+    <!-- Delete button -->
     <ImageButton
         android:id="@+id/event_delete_button"
         android:layout_width="wrap_content"

@@ -3,6 +3,7 @@ package com.oriya_s.tashtit.ACTIVITIES;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Patterns;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -11,20 +12,23 @@ import androidx.activity.EdgeToEdge;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.lifecycle.Observer;
-import androidx.lifecycle.ViewModelProvider;
 
-import com.oriya_s.helper.inputValidators.EntryValidation;
-import com.oriya_s.model.User;
-import com.oriya_s.tashtit.ACTIVITIES.BASE.BaseActivity;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.oriya_s.tashtit.R;
-import com.oriya_s.viewmodel.UsersViewmodel;
+import com.oriya_s.tashtit.ACTIVITIES.BASE.BaseActivity;
 
-public class CreateAccountActivity extends BaseActivity implements EntryValidation {
+import java.util.HashMap;
+import java.util.Map;
+
+public class CreateAccountActivity extends BaseActivity {
 
     private EditText etUserName, etPassword, etConfirmPassword, etEmail, etPhoneNumber, etLocation, etDOB;
     private Button btnCreateAccount, btnCancel;
-    private UsersViewmodel usersViewmodel;
+
+    private FirebaseAuth auth;
+    private FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,8 +42,10 @@ public class CreateAccountActivity extends BaseActivity implements EntryValidati
             return insets;
         });
 
+        auth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
+
         initializeViews();
-        setViewModel();
     }
 
     @Override
@@ -59,74 +65,79 @@ public class CreateAccountActivity extends BaseActivity implements EntryValidati
 
     @Override
     protected void setListeners() {
-        btnCreateAccount.setOnClickListener(view -> {
+        btnCreateAccount.setOnClickListener(v -> {
             if (validate()) {
-                User userProfile = new User();
-                userProfile.setUsername(etUserName.getText().toString());
-                userProfile.setPassword(etPassword.getText().toString());
-                userProfile.setEmail(etEmail.getText().toString());
-                userProfile.setPhoneNumber(etPhoneNumber.getText().toString());
-                userProfile.setLocationID(etLocation.getText().toString());
+                String email = etEmail.getText().toString().trim();
+                String password = etPassword.getText().toString().trim();
 
-                if (!etDOB.getText().toString().isEmpty()) {
-                    userProfile.setDOB(Long.parseLong(etDOB.getText().toString()));
-                } else {
-                    userProfile.setDOB(0);
-                }
-
-                usersViewmodel.save(userProfile);
+                auth.createUserWithEmailAndPassword(email, password)
+                        .addOnSuccessListener(authResult -> {
+                            FirebaseUser firebaseUser = auth.getCurrentUser();
+                            if (firebaseUser != null) {
+                                saveUserProfile(firebaseUser.getUid());
+                            }
+                        })
+                        .addOnFailureListener(e -> {
+                            Toast.makeText(this, "Registration failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        });
             }
         });
 
         btnCancel.setOnClickListener(v -> finish());
     }
 
-    protected void setViewModel() {
-        usersViewmodel = new ViewModelProvider(this).get(UsersViewmodel.class);
+    private void saveUserProfile(String uid) {
+        Map<String, Object> userProfile = new HashMap<>();
+        userProfile.put("username", etUserName.getText().toString());
+        userProfile.put("email", etEmail.getText().toString());
+        userProfile.put("phoneNumber", etPhoneNumber.getText().toString());
+        userProfile.put("locationID", etLocation.getText().toString());
 
-        usersViewmodel.getLiveDataSuccess().observe(this, new Observer<Boolean>() {
-            @Override
-            public void onChanged(Boolean aBoolean) {
-                if (aBoolean) {
-                    showToast("User registered successfully!");
-                    Intent intent = new Intent(CreateAccountActivity.this, LogInActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
+        if (!etDOB.getText().toString().isEmpty()) {
+            userProfile.put("dob", Long.parseLong(etDOB.getText().toString()));
+        } else {
+            userProfile.put("dob", 0);
+        }
+
+        db.collection("UserProfiles")
+                .document(uid)
+                .set(userProfile)
+                .addOnSuccessListener(unused -> {
+                    Toast.makeText(this, "User registered successfully!", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(CreateAccountActivity.this, LogInActivity.class));
                     finish();
-                } else {
-                    showToast("Registration failed: Email may already be in use.");
-                }
-            }
-        });
-    }
-
-    private void showToast(String msg) {
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to save user profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
     @Override
-    public void setValidation() {
-        // Optional override
+    protected void setViewModel() {
+        // Not needed here
     }
 
-    @Override
-    public boolean validate() {
+    private boolean validate() {
         if (etUserName.getText().toString().isEmpty()) {
             etUserName.setError("Enter username");
             return false;
         }
 
-        if (etEmail.getText().toString().isEmpty() || !Patterns.EMAIL_ADDRESS.matcher(etEmail.getText().toString()).matches()) {
+        String email = etEmail.getText().toString();
+        if (email.isEmpty() || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             etEmail.setError("Enter a valid email");
             return false;
         }
 
-        if (etPassword.getText().toString().length() < 4) {
-            etPassword.setError("Password must be at least 4 characters");
+        String password = etPassword.getText().toString();
+        String confirmPassword = etConfirmPassword.getText().toString();
+
+        if (password.length() < 6) {
+            etPassword.setError("Password must be at least 6 characters");
             return false;
         }
 
-        if (!etPassword.getText().toString().equals(etConfirmPassword.getText().toString())) {
+        if (!password.equals(confirmPassword)) {
             etConfirmPassword.setError("Passwords do not match");
             return false;
         }

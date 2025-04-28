@@ -13,6 +13,10 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.oriya_s.model.Event;
 import com.oriya_s.tashtit.ADPTERS.EventAdapter;
 import com.oriya_s.tashtit.R;
@@ -22,6 +26,7 @@ import java.util.ArrayList;
 public class HomeActivity extends AppCompatActivity {
 
     private static final int ADD_EVENT_REQUEST = 1;
+    private static final int EDIT_EVENT_REQUEST = 2;
 
     private ImageButton menuButton, eventsButton, callButton, cameraButton, chatButton;
     private DrawerLayout drawerLayout;
@@ -31,6 +36,9 @@ public class HomeActivity extends AppCompatActivity {
     private ArrayList<Event> eventList;
     private EventAdapter adapter;
 
+    private FirebaseUser currentUser;
+    private FirebaseFirestore firestore;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,6 +46,7 @@ public class HomeActivity extends AppCompatActivity {
 
         initializeViews();
         setListeners();
+        loadEventsFromFirebase();
     }
 
     private void initializeViews() {
@@ -51,12 +60,12 @@ public class HomeActivity extends AppCompatActivity {
 
         eventListView = findViewById(R.id.event_list);
         eventList = new ArrayList<>();
-        adapter = new EventAdapter(this, eventList, position -> {
-            eventList.remove(position);
-            adapter.notifyItemRemoved(position);
-        });
+        adapter = new EventAdapter(this, eventList);
         eventListView.setLayoutManager(new LinearLayoutManager(this));
         eventListView.setAdapter(adapter);
+
+        currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        firestore = FirebaseFirestore.getInstance();
     }
 
     private void setListeners() {
@@ -91,27 +100,53 @@ public class HomeActivity extends AppCompatActivity {
         drawerLayout.closeDrawer(navigationView);
     }
 
+    private void showToast(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    // 🔄 Real-time listener from Firestore
+    private void loadEventsFromFirebase() {
+        if (currentUser == null) return;
+
+        firestore.collection("users")
+                .document(currentUser.getUid())
+                .collection("events")
+                .addSnapshotListener((snapshots, e) -> {
+                    if (e != null || snapshots == null) return;
+
+                    eventList.clear();
+                    for (DocumentSnapshot doc : snapshots.getDocuments()) {
+                        Event event = doc.toObject(Event.class);
+                        if (event != null) {
+                            event.setId(doc.getId());
+                            eventList.add(event);
+                        }
+                    }
+                    adapter.notifyDataSetChanged();
+                });
+    }
+
+    // 🗑 Delete event
+    public void deleteEvent(Event event, int position) {
+        if (currentUser == null || event.getId() == null) return;
+
+        firestore.collection("users")
+                .document(currentUser.getUid())
+                .collection("events")
+                .document(event.getId())
+                .delete()
+                .addOnSuccessListener(unused -> {
+                    Toast.makeText(this, "Event deleted", Toast.LENGTH_SHORT).show();
+                    eventList.remove(position);
+                    adapter.notifyItemRemoved(position);
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to delete", Toast.LENGTH_SHORT).show());
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == ADD_EVENT_REQUEST && resultCode == RESULT_OK && data != null) {
-            String name = data.getStringExtra("event_name");
-            String description = data.getStringExtra("event_description");
-            String date = data.getStringExtra("event_date");
-            String visibility = data.getStringExtra("event_visibility");
-            String imageUri = data.getStringExtra("event_image");
-            String videoUri = data.getStringExtra("event_video");
-
-            Event event = new Event(name, description, date, visibility, imageUri);
-            event.setVideoUri(videoUri);
-
-            eventList.add(event);
-            adapter.notifyItemInserted(eventList.size() - 1);
-        }
-    }
-
-    private void showToast(String message) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        // No longer needed: handled by Firestore listener
     }
 }

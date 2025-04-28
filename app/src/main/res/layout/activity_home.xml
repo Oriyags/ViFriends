@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.drawerlayout.widget.DrawerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
@@ -45,7 +46,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="16dp" />
 
-        <!-- 🆕 RecyclerView to display list of events -->
+        <!-- RecyclerView to display events -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/event_list"
             android:layout_width="0dp"
@@ -113,6 +114,6 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        app:menu="@drawable/drawer_menu"
+        app:menu="@menu/drawer_menu"
         android:background="#FFFFFF" />
 </androidx.drawerlayout.widget.DrawerLayout>

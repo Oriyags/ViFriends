@@ -13,27 +13,22 @@ import android.widget.Toast;
 import android.widget.ProgressBar;
 
 import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.lifecycle.Observer;
-import androidx.lifecycle.ViewModelProvider;
 
-import com.oriya_s.model.User;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.oriya_s.tashtit.ACTIVITIES.BASE.BaseActivity;
 import com.oriya_s.tashtit.R;
-import com.oriya_s.viewmodel.UsersViewmodel;
 
 public class LogInActivity extends BaseActivity {
 
     private EditText etEmail, etPassword;
-    private SwitchCompat swSaveUser;
     private Button btnLogin, btnRegister;
     private ProgressBar progressBar;
 
-    private UsersViewmodel loginViewModel;
+    private FirebaseAuth firebaseAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,14 +42,13 @@ public class LogInActivity extends BaseActivity {
             return insets;
         });
 
+        firebaseAuth = FirebaseAuth.getInstance();
         initializeViews();
-        setViewModel();
     }
 
     protected void initializeViews() {
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
-        swSaveUser = findViewById(R.id.swSaveUser);
         btnLogin = findViewById(R.id.btnLogin);
         btnRegister = findViewById(R.id.btnRegister);
         progressBar = findViewById(R.id.progressBar);
@@ -83,21 +77,24 @@ public class LogInActivity extends BaseActivity {
 
             btnLogin.setEnabled(false);
             progressBar.setVisibility(View.VISIBLE);
-            loginViewModel.login(email, password);
+
+            firebaseAuth.signInWithEmailAndPassword(email, password)
+                    .addOnCompleteListener(task -> {
+                        btnLogin.setEnabled(true);
+                        progressBar.setVisibility(View.GONE);
+
+                        if (task.isSuccessful()) {
+                            FirebaseUser user = firebaseAuth.getCurrentUser();
+                            if (user != null) {
+                                showStyledToast("Login successful");
+                                startActivity(new Intent(LogInActivity.this, HomeActivity.class));
+                                finish();
+                            }
+                        } else {
+                            showStyledToast("Login failed: " + task.getException().getMessage());
+                        }
+                    });
         });
-    }
-
-    protected void setViewModel() {
-        loginViewModel = new ViewModelProvider(this).get(UsersViewmodel.class);
-
-        loginViewModel.getLiveDataEntity().observe(this, new Observer<User>() {
-            @Override
-            public void onChanged(User user) {
-                Toast.makeText(LogInActivity.this, (user != null) ? "Login success" : "Login failure", Toast.LENGTH_LONG).show();
-                startActivity(new Intent(LogInActivity.this, HomeActivity.class));
-            }
-        });
-
     }
 
     private void showStyledToast(String message) {
@@ -110,4 +107,7 @@ public class LogInActivity extends BaseActivity {
         toast.setView(layout);
         toast.show();
     }
+
+    @Override
+    protected void setViewModel() {} // not needed in this version
 }

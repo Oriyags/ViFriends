@@ -1,6 +1,8 @@
 package com.oriya_s.tashtit.ADPTERS;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -8,30 +10,24 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.VideoView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.oriya_s.model.Event;
+import com.oriya_s.tashtit.ACTIVITIES.AddEventActivity;
+import com.oriya_s.tashtit.ACTIVITIES.HomeActivity;
 import com.oriya_s.tashtit.R;
 
-import java.util.List;
+import java.util.ArrayList;
 
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHolder> {
-
-    private final List<Event> eventList;
     private final Context context;
-    private final OnEventActionListener listener;
+    private final ArrayList<Event> eventList;
 
-    public interface OnEventActionListener {
-        void onDelete(int position);
-    }
-
-    public EventAdapter(Context context, List<Event> eventList, OnEventActionListener listener) {
+    public EventAdapter(Context context, ArrayList<Event> eventList) {
         this.context = context;
         this.eventList = eventList;
-        this.listener = listener;
     }
 
     @NonNull
@@ -45,25 +41,35 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
         Event event = eventList.get(position);
 
-        holder.name.setText(event.getName() + " (" + event.getDate() + ")");
-        holder.description.setText(event.getDescription());
-        holder.visibility.setText("Visible to: " + event.getVisibility());
+        holder.eventTitle.setText(event.getName());
+        holder.eventDescription.setText(event.getDescription());
+        holder.eventVisibility.setText("Visible: " + event.getVisibility());
+        holder.eventDate.setText(event.getDate());
 
-        if (event.getVideoUri() != null && !event.getVideoUri().isEmpty()) {
-            holder.videoView.setVisibility(View.VISIBLE);
-            holder.videoView.setVideoURI(Uri.parse(event.getVideoUri()));
-            holder.videoView.seekTo(1);
-            holder.image.setVisibility(View.GONE);
-        } else if (event.getImageUri() != null && !event.getImageUri().isEmpty()) {
-            holder.image.setVisibility(View.VISIBLE);
-            holder.image.setImageURI(Uri.parse(event.getImageUri()));
-            holder.videoView.setVisibility(View.GONE);
+        // Show image preview if available
+        if (event.getImageUri() != null && !event.getImageUri().isEmpty()) {
+            holder.eventImage.setVisibility(View.VISIBLE);
+            holder.eventImage.setImageURI(Uri.parse(event.getImageUri()));
         } else {
-            holder.image.setVisibility(View.GONE);
-            holder.videoView.setVisibility(View.GONE);
+            holder.eventImage.setVisibility(View.GONE);
         }
 
-        holder.deleteButton.setOnClickListener(v -> listener.onDelete(position));
+        // Show video label if available
+        if (event.getVideoUri() != null && !event.getVideoUri().isEmpty()) {
+            holder.eventVideoLabel.setVisibility(View.VISIBLE);
+        } else {
+            holder.eventVideoLabel.setVisibility(View.GONE);
+        }
+
+        holder.deleteButton.setOnClickListener(v -> {
+            ((HomeActivity) context).deleteEvent(event, holder.getAdapterPosition());
+        });
+
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(context, AddEventActivity.class);
+            intent.putExtra("edit_event", event); // needs Serializable or Parcelable
+            ((Activity) context).startActivityForResult(intent, 2); // EDIT_EVENT_REQUEST
+        });
     }
 
     @Override
@@ -71,19 +77,19 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         return eventList.size();
     }
 
-    static class EventViewHolder extends RecyclerView.ViewHolder {
-        TextView name, description, visibility;
+    public static class EventViewHolder extends RecyclerView.ViewHolder {
+        TextView eventTitle, eventDescription, eventVisibility, eventDate, eventVideoLabel;
+        ImageView eventImage;
         ImageButton deleteButton;
-        ImageView image;
-        VideoView videoView;
 
-        EventViewHolder(@NonNull View itemView) {
+        public EventViewHolder(@NonNull View itemView) {
             super(itemView);
-            name = itemView.findViewById(R.id.event_title);
-            description = itemView.findViewById(R.id.event_description);
-            visibility = itemView.findViewById(R.id.event_visibility);
-            image = itemView.findViewById(R.id.event_image);
-            videoView = itemView.findViewById(R.id.event_video);
+            eventTitle = itemView.findViewById(R.id.event_title);
+            eventDescription = itemView.findViewById(R.id.event_description);
+            eventVisibility = itemView.findViewById(R.id.event_visibility);
+            eventDate = itemView.findViewById(R.id.event_date);
+            eventImage = itemView.findViewById(R.id.event_image_preview);
+            eventVideoLabel = itemView.findViewById(R.id.event_video_label);
             deleteButton = itemView.findViewById(R.id.event_delete_button);
         }
     }

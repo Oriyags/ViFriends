@@ -10,7 +10,7 @@
     tools:context=".ACTIVITIES.CreateAccountActivity">
 
     <!-- Logo -->
-    <android.widget.ImageView
+    <ImageView
         android:id="@+id/imgLogo"
         android:layout_width="359dp"
         android:layout_height="154dp"
@@ -19,12 +19,12 @@
         android:contentDescription="App Logo"
         android:scaleType="centerCrop"
         android:src="@drawable/blue_logo"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Title -->
-    <android.widget.TextView
+    <TextView
         android:id="@+id/tvCreateAccount"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -59,7 +59,7 @@
             android:paddingStart="24dp"
             android:paddingEnd="24dp">
 
-            <!-- Fields -->
+            <!-- Username -->
             <EditText
                 android:id="@+id/etUserName"
                 android:layout_width="match_parent"
@@ -75,6 +75,7 @@
                 android:inputType="textPersonName"
                 android:layout_marginBottom="10dp" />
 
+            <!-- Phone Number -->
             <EditText
                 android:id="@+id/etPhoneNumber"
                 android:layout_width="match_parent"
@@ -90,6 +91,7 @@
                 android:inputType="phone"
                 android:layout_marginBottom="10dp" />
 
+            <!-- Email -->
             <EditText
                 android:id="@+id/etEmail"
                 android:layout_width="match_parent"
@@ -105,6 +107,7 @@
                 android:inputType="textEmailAddress"
                 android:layout_marginBottom="10dp" />
 
+            <!-- Location -->
             <EditText
                 android:id="@+id/etLocation"
                 android:layout_width="match_parent"
@@ -120,6 +123,7 @@
                 android:inputType="text"
                 android:layout_marginBottom="10dp" />
 
+            <!-- Date of Birth -->
             <EditText
                 android:id="@+id/etDOB"
                 android:layout_width="match_parent"
@@ -135,6 +139,7 @@
                 android:inputType="number"
                 android:layout_marginBottom="10dp" />
 
+            <!-- Password -->
             <EditText
                 android:id="@+id/etPassword"
                 android:layout_width="match_parent"
@@ -150,6 +155,7 @@
                 android:inputType="textPassword"
                 android:layout_marginBottom="10dp" />
 
+            <!-- Confirm Password -->
             <EditText
                 android:id="@+id/etConfirmPassword"
                 android:layout_width="match_parent"
@@ -165,7 +171,7 @@
                 android:inputType="textPassword"
                 android:layout_marginBottom="20dp" />
 
-            <!-- Buttons -->
+            <!-- Create Account Button -->
             <Button
                 android:id="@+id/btnCreateAccount"
                 android:layout_width="match_parent"
@@ -176,6 +182,7 @@
                 android:textStyle="bold"
                 android:layout_marginBottom="10dp" />
 
+            <!-- Cancel Button -->
             <Button
                 android:id="@+id/btnCancel"
                 android:layout_width="match_parent"
@@ -183,6 +190,8 @@
                 android:background="@drawable/btn_blue"
                 android:text="Cancel"
                 android:textColor="#FFFFFF" />
+
         </LinearLayout>
     </ScrollView>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
