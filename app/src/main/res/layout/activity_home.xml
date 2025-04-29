@@ -6,12 +6,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Main Content -->
+    <!-- Main Screen -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="16dp"
-        android:background="#FFFFFF">
+        android:background="#FFFFFF"
+        android:padding="16dp">
 
         <!-- Menu Button -->
         <ImageButton
@@ -33,7 +33,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- App Title -->
+        <!-- Title -->
         <TextView
             android:id="@+id/logo_text"
             android:layout_width="wrap_content"
@@ -44,33 +44,45 @@
             app:layout_constraintTop_toBottomOf="@id/menu_button"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="16dp" />
+            android:layout_marginTop="8dp" />
 
-        <!-- RecyclerView to display events -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/event_list"
+        <!-- Scrollable Section -->
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/home_scroll"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:paddingTop="8dp"
+            android:fillViewport="true"
             app:layout_constraintTop_toBottomOf="@id/logo_text"
-            app:layout_constraintBottom_toTopOf="@id/friends_grid"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
-
-        <!-- Friends Grid -->
-        <GridView
-            android:id="@+id/friends_grid"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:numColumns="3"
-            android:verticalSpacing="12dp"
-            android:horizontalSpacing="12dp"
-            app:layout_constraintTop_toBottomOf="@id/event_list"
             app:layout_constraintBottom_toTopOf="@id/bottom_bar"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:clipToPadding="false"
-            android:padding="8dp" />
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Event List -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/event_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    android:paddingTop="8dp" />
+
+                <!-- Friends Grid -->
+                <GridView
+                    android:id="@+id/friends_grid"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:numColumns="3"
+                    android:verticalSpacing="12dp"
+                    android:horizontalSpacing="12dp"
+                    android:clipToPadding="false"
+                    android:padding="8dp"
+                    android:nestedScrollingEnabled="false" />
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
 
         <!-- Bottom Bar -->
         <LinearLayout
@@ -81,7 +93,8 @@
             android:gravity="center"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent">
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="8dp">
 
             <ImageButton
                 android:id="@+id/call_button"
@@ -108,7 +121,7 @@
         </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Side Navigation Menu -->
+    <!-- Drawer -->
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/navigation_view"
         android:layout_width="wrap_content"

@@ -1,7 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/nav_user"
-        android:title="User"
+        android:title="User Profile"
         android:icon="@android:drawable/ic_menu_myplaces" />
     <item
         android:id="@+id/nav_settings"
@@ -9,6 +10,6 @@
         android:icon="@android:drawable/ic_menu_preferences" />
     <item
         android:id="@+id/nav_logout"
-        android:title="Log out"
+        android:title="Logout"
         android:icon="@android:drawable/ic_lock_power_off" />
 </menu>
