@@ -3,7 +3,9 @@ package com.oriya_s.tashtit.ACTIVITIES;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -27,9 +29,10 @@ import java.util.ArrayList;
 public class HomeActivity extends AppCompatActivity {
 
     private static final int ADD_EVENT_REQUEST = 1;
-    private static final int EDIT_EVENT_REQUEST = 2;
 
-    private ImageButton menuButton, eventsButton, callButton, cameraButton, chatButton;
+    private ImageButton menuButton, eventsButton;
+    private Button btnViewFriends;
+    private TextView friendsSummaryText;
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
 
@@ -56,9 +59,8 @@ public class HomeActivity extends AppCompatActivity {
         navigationView = findViewById(R.id.navigation_view);
         menuButton = findViewById(R.id.menu_button);
         eventsButton = findViewById(R.id.events_button);
-        callButton = findViewById(R.id.call_button);
-        cameraButton = findViewById(R.id.camera_button);
-        chatButton = findViewById(R.id.chat_button);
+        btnViewFriends = findViewById(R.id.btn_view_friends);
+        friendsSummaryText = findViewById(R.id.friends_summary_text);
 
         eventListView = findViewById(R.id.event_list);
         eventList = new ArrayList<>();
@@ -71,10 +73,8 @@ public class HomeActivity extends AppCompatActivity {
 
         if (currentUser == null) {
             Toast.makeText(this, "Session expired. Please log in again.", Toast.LENGTH_SHORT).show();
-            if (!isFinishing()) {
-                startActivity(new Intent(this, LogInActivity.class));
-                finish();
-            }
+            startActivity(new Intent(this, LogInActivity.class));
+            finish();
         }
     }
 
@@ -86,15 +86,10 @@ public class HomeActivity extends AppCompatActivity {
             startActivityForResult(intent, ADD_EVENT_REQUEST);
         });
 
-        callButton.setOnClickListener(v -> showToast("Choose Friend to Call"));
-
-        // ✅ Changed: Open VideoActivity when camera button is clicked
-        cameraButton.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeActivity.this, VideoActivity.class);
+        btnViewFriends.setOnClickListener(v -> {
+            Intent intent = new Intent(HomeActivity.this, FriendsListActivity.class);
             startActivity(intent);
         });
-
-        chatButton.setOnClickListener(v -> showToast("Choose Friend to Chat With"));
 
         navigationView.setNavigationItemSelectedListener(item -> {
             handleDrawerItemClick(item);
@@ -106,7 +101,6 @@ public class HomeActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         if (id == R.id.nav_user) {
-            // ✅ Changed: Open UserProfileActivity
             startActivity(new Intent(HomeActivity.this, UserProfileActivity.class));
         } else if (id == R.id.nav_settings) {
             showToast("Settings");
@@ -161,12 +155,6 @@ public class HomeActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Failed to delete", Toast.LENGTH_SHORT).show());
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        // No longer needed: handled by Firestore listener
     }
 
     @Override
