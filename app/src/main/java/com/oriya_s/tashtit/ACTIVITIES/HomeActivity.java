@@ -17,6 +17,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.oriya_s.model.Event;
 import com.oriya_s.tashtit.ADPTERS.EventAdapter;
 import com.oriya_s.tashtit.R;
@@ -38,6 +39,7 @@ public class HomeActivity extends AppCompatActivity {
 
     private FirebaseUser currentUser;
     private FirebaseFirestore firestore;
+    private ListenerRegistration eventListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +68,14 @@ public class HomeActivity extends AppCompatActivity {
 
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
         firestore = FirebaseFirestore.getInstance();
+
+        if (currentUser == null) {
+            Toast.makeText(this, "Session expired. Please log in again.", Toast.LENGTH_SHORT).show();
+            if (!isFinishing()) {
+                startActivity(new Intent(this, LogInActivity.class));
+                finish();
+            }
+        }
     }
 
     private void setListeners() {
@@ -77,7 +87,13 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         callButton.setOnClickListener(v -> showToast("Choose Friend to Call"));
-        cameraButton.setOnClickListener(v -> showToast("Choose Friend for Video Call"));
+
+        // ✅ Changed: Open VideoActivity when camera button is clicked
+        cameraButton.setOnClickListener(v -> {
+            Intent intent = new Intent(HomeActivity.this, VideoActivity.class);
+            startActivity(intent);
+        });
+
         chatButton.setOnClickListener(v -> showToast("Choose Friend to Chat With"));
 
         navigationView.setNavigationItemSelectedListener(item -> {
@@ -90,11 +106,16 @@ public class HomeActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         if (id == R.id.nav_user) {
-            showToast("User Profile");
+            // ✅ Changed: Open UserProfileActivity
+            startActivity(new Intent(HomeActivity.this, UserProfileActivity.class));
         } else if (id == R.id.nav_settings) {
             showToast("Settings");
         } else if (id == R.id.nav_logout) {
-            showToast("Logged Out");
+            FirebaseAuth.getInstance().signOut();
+            Intent intent = new Intent(HomeActivity.this, LogInActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            finish();
         }
 
         drawerLayout.closeDrawer(navigationView);
@@ -104,11 +125,10 @@ public class HomeActivity extends AppCompatActivity {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
-    // 🔄 Real-time listener from Firestore
     private void loadEventsFromFirebase() {
         if (currentUser == null) return;
 
-        firestore.collection("users")
+        eventListener = firestore.collection("users")
                 .document(currentUser.getUid())
                 .collection("events")
                 .addSnapshotListener((snapshots, e) -> {
@@ -126,7 +146,6 @@ public class HomeActivity extends AppCompatActivity {
                 });
     }
 
-    // 🗑 Delete event
     public void deleteEvent(Event event, int position) {
         if (currentUser == null || event.getId() == null) return;
 
@@ -148,5 +167,13 @@ public class HomeActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         // No longer needed: handled by Firestore listener
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (eventListener != null) {
+            eventListener.remove();
+        }
+        super.onDestroy();
     }
 }

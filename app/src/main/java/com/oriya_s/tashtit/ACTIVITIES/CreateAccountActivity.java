@@ -16,8 +16,8 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.oriya_s.tashtit.R;
 import com.oriya_s.tashtit.ACTIVITIES.BASE.BaseActivity;
+import com.oriya_s.tashtit.R;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -66,21 +66,20 @@ public class CreateAccountActivity extends BaseActivity {
     @Override
     protected void setListeners() {
         btnCreateAccount.setOnClickListener(v -> {
-            if (validate()) {
-                String email = etEmail.getText().toString().trim();
-                String password = etPassword.getText().toString().trim();
+            if (!validate()) return;
 
-                auth.createUserWithEmailAndPassword(email, password)
-                        .addOnSuccessListener(authResult -> {
-                            FirebaseUser firebaseUser = auth.getCurrentUser();
-                            if (firebaseUser != null) {
-                                saveUserProfile(firebaseUser.getUid());
-                            }
-                        })
-                        .addOnFailureListener(e -> {
-                            Toast.makeText(this, "Registration failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                        });
-            }
+            String email = etEmail.getText().toString().trim();
+            String password = etPassword.getText().toString().trim();
+
+            auth.createUserWithEmailAndPassword(email, password)
+                    .addOnSuccessListener(authResult -> {
+                        FirebaseUser firebaseUser = auth.getCurrentUser();
+                        if (firebaseUser != null) {
+                            saveUserProfile(firebaseUser.getUid());
+                        }
+                    })
+                    .addOnFailureListener(e ->
+                            Toast.makeText(this, "Registration failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
         });
 
         btnCancel.setOnClickListener(v -> finish());
@@ -88,15 +87,17 @@ public class CreateAccountActivity extends BaseActivity {
 
     private void saveUserProfile(String uid) {
         Map<String, Object> userProfile = new HashMap<>();
-        userProfile.put("username", etUserName.getText().toString());
-        userProfile.put("email", etEmail.getText().toString());
-        userProfile.put("phoneNumber", etPhoneNumber.getText().toString());
-        userProfile.put("locationID", etLocation.getText().toString());
+        userProfile.put("username", etUserName.getText().toString().trim());
+        userProfile.put("email", etEmail.getText().toString().trim());
+        userProfile.put("phoneNumber", etPhoneNumber.getText().toString().trim());
+        userProfile.put("locationID", etLocation.getText().toString().trim());
 
-        if (!etDOB.getText().toString().isEmpty()) {
-            userProfile.put("dob", Long.parseLong(etDOB.getText().toString()));
-        } else {
-            userProfile.put("dob", 0);
+        String dobText = etDOB.getText().toString().trim();
+        try {
+            userProfile.put("dob", dobText.isEmpty() ? 0 : Long.parseLong(dobText));
+        } catch (NumberFormatException e) {
+            Toast.makeText(this, "Invalid date of birth format", Toast.LENGTH_SHORT).show();
+            return;
         }
 
         db.collection("UserProfiles")
@@ -107,23 +108,20 @@ public class CreateAccountActivity extends BaseActivity {
                     startActivity(new Intent(CreateAccountActivity.this, LogInActivity.class));
                     finish();
                 })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Failed to save user profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to save user profile: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     @Override
-    protected void setViewModel() {
-        // Not needed here
-    }
+    protected void setViewModel() {}
 
     private boolean validate() {
-        if (etUserName.getText().toString().isEmpty()) {
-            etUserName.setError("Enter username");
+        if (etUserName.getText().toString().trim().isEmpty()) {
+            etUserName.setError("Username is required");
             return false;
         }
 
-        String email = etEmail.getText().toString();
+        String email = etEmail.getText().toString().trim();
         if (email.isEmpty() || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             etEmail.setError("Enter a valid email");
             return false;

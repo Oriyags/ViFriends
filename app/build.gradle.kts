@@ -41,9 +41,14 @@ dependencies {
     // ✅ Firebase dependencies
     implementation(libs.firebase.firestore)
     implementation("com.google.firebase:firebase-auth:22.3.1")
+    implementation("com.google.firebase:firebase-storage:21.0.0")
 
-    // ✅ Jitsi Meet SDK for Video Calls (Latest Stable Version)
+    // ✅ Jitsi Meet SDK for Video Calls
     implementation("org.jitsi.react:jitsi-meet-sdk:8.1.2")
+
+    // ✅ Glide for image loading
+    implementation("com.github.bumptech.glide:glide:4.15.1")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.15.1")
 
     implementation("de.hdodenhof:circleimageview:3.1.0")
     implementation("com.google.android.gms:play-services-maps:19.0.0")

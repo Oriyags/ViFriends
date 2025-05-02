@@ -2,15 +2,14 @@ package com.oriya_s.tashtit.ACTIVITIES;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ProgressBar;
 
 import androidx.activity.EdgeToEdge;
 import androidx.core.graphics.Insets;
@@ -52,28 +51,20 @@ public class LogInActivity extends BaseActivity {
         btnLogin = findViewById(R.id.btnLogin);
         btnRegister = findViewById(R.id.btnRegister);
         progressBar = findViewById(R.id.progressBar);
-
         setListeners();
     }
 
     protected void setListeners() {
-        btnRegister.setOnClickListener(v -> {
-            startActivity(new Intent(LogInActivity.this, CreateAccountActivity.class));
-        });
+        btnRegister.setOnClickListener(v ->
+                startActivity(new Intent(LogInActivity.this, CreateAccountActivity.class))
+        );
 
         btnLogin.setOnClickListener(v -> {
-            InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-            if (getCurrentFocus() != null) {
-                imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
-            }
-
+            hideKeyboard();
             String email = etEmail.getText().toString().trim();
             String password = etPassword.getText().toString();
 
-            if (email.isEmpty() || password.isEmpty()) {
-                showStyledToast("Please enter Email and Password");
-                return;
-            }
+            if (!validateInputs(email, password)) return;
 
             btnLogin.setEnabled(false);
             progressBar.setVisibility(View.VISIBLE);
@@ -97,6 +88,32 @@ public class LogInActivity extends BaseActivity {
         });
     }
 
+    private boolean validateInputs(String email, String password) {
+        if (email.isEmpty()) {
+            etEmail.setError("Email is required");
+            return false;
+        }
+
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            etEmail.setError("Enter a valid email address");
+            return false;
+        }
+
+        if (password.isEmpty()) {
+            etPassword.setError("Password is required");
+            return false;
+        }
+
+        return true;
+    }
+
+    private void hideKeyboard() {
+        InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        if (getCurrentFocus() != null && imm != null) {
+            imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+        }
+    }
+
     private void showStyledToast(String message) {
         View layout = LayoutInflater.from(this).inflate(R.layout.toast_custom, null);
         TextView textView = layout.findViewById(R.id.toastText);
@@ -109,5 +126,5 @@ public class LogInActivity extends BaseActivity {
     }
 
     @Override
-    protected void setViewModel() {} // not needed in this version
+    protected void setViewModel() {}
 }

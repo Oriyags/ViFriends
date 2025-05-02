@@ -83,16 +83,15 @@
             android:text="Pick Video"
             android:layout_marginTop="12dp" />
 
-        <!-- Video Preview -->
-        <VideoView
-            android:id="@+id/selected_video"
+        <!-- Video Thumbnail Preview -->
+        <ImageView
+            android:id="@+id/selected_video_thumb"
             android:layout_width="match_parent"
             android:layout_height="200dp"
             android:layout_marginTop="8dp"
             android:visibility="gone"
             android:background="#CCCCCC"
-            android:focusable="false"
-            android:focusableInTouchMode="false" />
+            android:scaleType="centerCrop" />
 
         <!-- Choose Friends -->
         <Button

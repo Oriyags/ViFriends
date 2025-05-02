@@ -21,6 +21,9 @@
         android:theme="@style/Theme.TASHTIT"
         tools:targetApi="31">
         <activity
+            android:name=".ACTIVITIES.UserProfileActivity"
+            android:exported="false" />
+        <activity
             android:name=".ACTIVITIES.AddEventActivity"
             android:exported="false" />
         <activity

@@ -14,6 +14,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.oriya_s.model.Event;
 import com.oriya_s.tashtit.ACTIVITIES.AddEventActivity;
 import com.oriya_s.tashtit.ACTIVITIES.HomeActivity;
@@ -46,10 +47,10 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         holder.eventVisibility.setText("Visible: " + event.getVisibility());
         holder.eventDate.setText(event.getDate());
 
-        // Show image preview if available
+        // Show image preview using Glide
         if (event.getImageUri() != null && !event.getImageUri().isEmpty()) {
             holder.eventImage.setVisibility(View.VISIBLE);
-            holder.eventImage.setImageURI(Uri.parse(event.getImageUri()));
+            Glide.with(context).load(event.getImageUri()).into(holder.eventImage);
         } else {
             holder.eventImage.setVisibility(View.GONE);
         }
@@ -62,13 +63,17 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         }
 
         holder.deleteButton.setOnClickListener(v -> {
-            ((HomeActivity) context).deleteEvent(event, holder.getAdapterPosition());
+            if (context instanceof HomeActivity) {
+                ((HomeActivity) context).deleteEvent(event, holder.getAdapterPosition());
+            }
         });
 
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(context, AddEventActivity.class);
-            intent.putExtra("edit_event", event); // needs Serializable or Parcelable
-            ((Activity) context).startActivityForResult(intent, 2); // EDIT_EVENT_REQUEST
+            intent.putExtra("edit_event", event); // requires Serializable or Parcelable
+            if (context instanceof Activity) {
+                ((Activity) context).startActivityForResult(intent, 2); // EDIT_EVENT_REQUEST
+            }
         });
     }
 
