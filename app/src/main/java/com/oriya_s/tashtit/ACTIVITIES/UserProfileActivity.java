@@ -80,6 +80,8 @@ public class UserProfileActivity extends AppCompatActivity {
                         if (selectedImageUri != null) {
                             Glide.with(this).load(selectedImageUri).into(profileImage);
                             uploadProfileImage(selectedImageUri);
+                        } else {
+                            Toast.makeText(this, "No image selected.", Toast.LENGTH_SHORT).show();
                         }
                     }
                 });
@@ -142,7 +144,10 @@ public class UserProfileActivity extends AppCompatActivity {
     }
 
     private void uploadProfileImage(Uri imageUri) {
-        if (currentUser == null || imageUri == null) return;
+        if (currentUser == null || imageUri == null) {
+            Toast.makeText(this, "Image not selected or user not logged in.", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         StorageReference ref = storage.getReference("profile_images/" + currentUser.getUid() + ".jpg");
         ref.putFile(imageUri)
