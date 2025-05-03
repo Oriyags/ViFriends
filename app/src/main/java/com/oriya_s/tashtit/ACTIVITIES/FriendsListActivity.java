@@ -4,9 +4,11 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.PopupMenu;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -49,6 +51,8 @@ public class FriendsListActivity extends AppCompatActivity {
         adapter = new FriendsListAdapter(this, friends, db, currentUser);
         friendsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         friendsRecyclerView.setAdapter(adapter);
+
+        adapter.setOnFriendClickListener((view, friend) -> showFriendOptions(view, friend));
 
         btnAddFriend.setOnClickListener(v -> showSearchDialog());
 
@@ -93,7 +97,6 @@ public class FriendsListActivity extends AppCompatActivity {
                             return;
                         }
 
-                        // Check if request already exists
                         db.collection("users").document(receiverId)
                                 .collection("friends").document(currentUser.getUid())
                                 .get()
@@ -101,7 +104,6 @@ public class FriendsListActivity extends AppCompatActivity {
                                     if (existing.exists()) {
                                         Toast.makeText(this, "Friend request already sent", Toast.LENGTH_SHORT).show();
                                     } else {
-                                        // Get current user's profile info
                                         db.collection("UserProfiles")
                                                 .document(currentUser.getUid())
                                                 .get()
@@ -117,7 +119,6 @@ public class FriendsListActivity extends AppCompatActivity {
                                                             "pending"
                                                     );
 
-                                                    // Save request to receiver's friend list
                                                     db.collection("users")
                                                             .document(receiverId)
                                                             .collection("friends")
@@ -127,7 +128,6 @@ public class FriendsListActivity extends AppCompatActivity {
                                                                 Toast.makeText(this, "Friend request sent", Toast.LENGTH_SHORT).show();
                                                             });
 
-                                                    // (Optional) Add placeholder to sender's friend list
                                                     Friend placeholder = new Friend(
                                                             receiverId,
                                                             username,
@@ -168,5 +168,35 @@ public class FriendsListActivity extends AppCompatActivity {
                     });
                     adapter.notifyDataSetChanged();
                 });
+    }
+
+    private void showFriendOptions(View anchorView, Friend friend) {
+        PopupMenu popup = new PopupMenu(this, anchorView);
+        popup.getMenu().add("View Profile");
+        popup.getMenu().add("Make Video Call");
+        popup.getMenu().add("Go to Chat");
+
+        popup.setOnMenuItemClickListener(item -> {
+            String title = item.getTitle().toString();
+            Intent intent = null;
+            switch (title) {
+                case "View Profile":
+                    intent = new Intent(this, UserProfileActivity.class);
+                    break;
+                case "Make Video Call":
+                    intent = new Intent(this, VideoActivity.class);
+                    break;
+                case "Go to Chat":
+                    intent = new Intent(this, ChatActivity.class);
+                    break;
+            }
+            if (intent != null) {
+                intent.putExtra("userId", friend.getFriendID());
+                startActivity(intent);
+            }
+            return true;
+        });
+
+        popup.show();
     }
 }

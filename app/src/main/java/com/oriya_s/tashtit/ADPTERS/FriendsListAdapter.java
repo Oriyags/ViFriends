@@ -28,6 +28,16 @@ public class FriendsListAdapter extends RecyclerView.Adapter<FriendsListAdapter.
     private final FirebaseFirestore db;
     private final FirebaseUser currentUser;
 
+    public interface OnFriendClickListener {
+        void onFriendClicked(View view, Friend friend);
+    }
+
+    private OnFriendClickListener listener;
+
+    public void setOnFriendClickListener(OnFriendClickListener listener) {
+        this.listener = listener;
+    }
+
     public FriendsListAdapter(Context context, List<Friend> friends, FirebaseFirestore db, FirebaseUser currentUser) {
         this.context = context;
         this.friends = friends;
@@ -64,6 +74,12 @@ public class FriendsListAdapter extends RecyclerView.Adapter<FriendsListAdapter.
                     .setPositiveButton("Remove", (dialog, which) -> removeFriend(friend, position))
                     .setNegativeButton("Cancel", null)
                     .show();
+        });
+
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onFriendClicked(v, friend);
+            }
         });
     }
 
