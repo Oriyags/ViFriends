@@ -52,7 +52,7 @@ public class FriendsListActivity extends AppCompatActivity {
         friendsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         friendsRecyclerView.setAdapter(adapter);
 
-        adapter.setOnFriendClickListener((view, friend) -> showFriendOptions(view, friend));
+        adapter.setOnFriendClickListener(this::showFriendOptions);
 
         btnAddFriend.setOnClickListener(v -> showSearchDialog());
 
