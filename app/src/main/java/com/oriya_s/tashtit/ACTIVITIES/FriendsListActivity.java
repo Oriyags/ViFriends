@@ -1,8 +1,10 @@
 package com.oriya_s.tashtit.ACTIVITIES;
 
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
@@ -24,6 +26,7 @@ public class FriendsListActivity extends AppCompatActivity {
 
     private RecyclerView friendsRecyclerView;
     private ImageButton btnAddFriend;
+    private Button btnPendingRequests;
     private FriendsListAdapter adapter;
     private ArrayList<Friend> friends;
 
@@ -40,13 +43,19 @@ public class FriendsListActivity extends AppCompatActivity {
 
         friendsRecyclerView = findViewById(R.id.recycler_friends);
         btnAddFriend = findViewById(R.id.btn_add_friend);
+        btnPendingRequests = findViewById(R.id.btn_pending_requests);
 
         friends = new ArrayList<>();
-        adapter = new FriendsListAdapter(this, friends); // ✅ Fixed constructor
+        adapter = new FriendsListAdapter(this, friends, db, currentUser);
         friendsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         friendsRecyclerView.setAdapter(adapter);
 
         btnAddFriend.setOnClickListener(v -> showSearchDialog());
+
+        btnPendingRequests.setOnClickListener(v -> {
+            Intent intent = new Intent(FriendsListActivity.this, PendingRequestsActivity.class);
+            startActivity(intent);
+        });
 
         loadFriends();
     }
@@ -57,9 +66,9 @@ public class FriendsListActivity extends AppCompatActivity {
         input.setHint("Enter username");
 
         new AlertDialog.Builder(this)
-                .setTitle("Add Friend")
+                .setTitle("Send Friend Request")
                 .setView(input)
-                .setPositiveButton("Search", (dialog, which) -> searchUserByUsername(input.getText().toString().trim()))
+                .setPositiveButton("Send", (dialog, which) -> searchUserByUsername(input.getText().toString().trim()))
                 .setNegativeButton("Cancel", null)
                 .show();
     }
@@ -70,12 +79,33 @@ public class FriendsListActivity extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(query -> {
                     if (!query.isEmpty()) {
-                        String id = query.getDocuments().get(0).getId();
-                        String name = query.getDocuments().get(0).getString("username");
-                        String avatar = query.getDocuments().get(0).getString("profileImageUrl");
+                        String receiverId = query.getDocuments().get(0).getId();
 
-                        Friend friend = new Friend(id, name, avatar);
-                        addFriend(friend);
+                        // Get current user's profile info to include in the request
+                        db.collection("UserProfiles")
+                                .document(currentUser.getUid())
+                                .get()
+                                .addOnSuccessListener(currentProfile -> {
+                                    String senderName = currentProfile.getString("username");
+                                    String senderAvatar = currentProfile.getString("profileImageUrl");
+
+                                    Friend sentRequest = new Friend(
+                                            currentUser.getUid(), // sender UID
+                                            senderName,           // sender name
+                                            senderAvatar,         // sender avatar
+                                            receiverId,           // receiver UID
+                                            "pending"
+                                    );
+
+                                    db.collection("users")
+                                            .document(receiverId)
+                                            .collection("friends")
+                                            .document(currentUser.getUid())
+                                            .set(sentRequest)
+                                            .addOnSuccessListener(unused ->
+                                                    Toast.makeText(this, "Friend request sent", Toast.LENGTH_SHORT).show()
+                                            );
+                                });
                     } else {
                         Toast.makeText(this, "User not found", Toast.LENGTH_SHORT).show();
                     }
@@ -84,27 +114,13 @@ public class FriendsListActivity extends AppCompatActivity {
                         Toast.makeText(this, "Error searching user", Toast.LENGTH_SHORT).show());
     }
 
-    private void addFriend(Friend friend) {
-        if (currentUser == null) return;
-
-        db.collection("users")
-                .document(currentUser.getUid())
-                .collection("friends")
-                .document(friend.getFriendID()) // ✅ Fixed here
-                .set(friend)
-                .addOnSuccessListener(unused -> {
-                    friends.add(friend);
-                    adapter.notifyItemInserted(friends.size() - 1);
-                    Toast.makeText(this, "Friend added", Toast.LENGTH_SHORT).show();
-                });
-    }
-
     private void loadFriends() {
         if (currentUser == null) return;
 
         db.collection("users")
                 .document(currentUser.getUid())
                 .collection("friends")
+                .whereEqualTo("status", "accepted")
                 .get()
                 .addOnSuccessListener(snapshot -> {
                     friends.clear();

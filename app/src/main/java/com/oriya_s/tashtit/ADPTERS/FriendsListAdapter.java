@@ -14,7 +14,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.oriya_s.model.Friend;
@@ -29,11 +28,11 @@ public class FriendsListAdapter extends RecyclerView.Adapter<FriendsListAdapter.
     private final FirebaseFirestore db;
     private final FirebaseUser currentUser;
 
-    public FriendsListAdapter(Context context, List<Friend> friends) {
+    public FriendsListAdapter(Context context, List<Friend> friends, FirebaseFirestore db, FirebaseUser currentUser) {
         this.context = context;
         this.friends = friends;
-        this.db = FirebaseFirestore.getInstance();
-        this.currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        this.db = db;
+        this.currentUser = currentUser;
     }
 
     @NonNull
@@ -82,8 +81,7 @@ public class FriendsListAdapter extends RecyclerView.Adapter<FriendsListAdapter.
                     Toast.makeText(context, "Friend removed", Toast.LENGTH_SHORT).show();
                 })
                 .addOnFailureListener(e ->
-                        Toast.makeText(context, "Failed to remove friend", Toast.LENGTH_SHORT).show()
-                );
+                        Toast.makeText(context, "Failed to remove friend", Toast.LENGTH_SHORT).show());
     }
 
     @Override
