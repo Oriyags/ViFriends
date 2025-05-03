@@ -74,6 +74,13 @@ public class FriendsListActivity extends AppCompatActivity {
     }
 
     private void searchUserByUsername(String username) {
+        if (currentUser == null || username.isEmpty()) return;
+
+        if (username.equals(currentUser.getDisplayName())) {
+            Toast.makeText(this, "You can't send a friend request to yourself", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         db.collection("UserProfiles")
                 .whereEqualTo("username", username)
                 .get()
@@ -81,30 +88,61 @@ public class FriendsListActivity extends AppCompatActivity {
                     if (!query.isEmpty()) {
                         String receiverId = query.getDocuments().get(0).getId();
 
-                        // Get current user's profile info to include in the request
-                        db.collection("UserProfiles")
-                                .document(currentUser.getUid())
+                        if (receiverId.equals(currentUser.getUid())) {
+                            Toast.makeText(this, "You can't send a friend request to yourself", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        // Check if request already exists
+                        db.collection("users").document(receiverId)
+                                .collection("friends").document(currentUser.getUid())
                                 .get()
-                                .addOnSuccessListener(currentProfile -> {
-                                    String senderName = currentProfile.getString("username");
-                                    String senderAvatar = currentProfile.getString("profileImageUrl");
+                                .addOnSuccessListener(existing -> {
+                                    if (existing.exists()) {
+                                        Toast.makeText(this, "Friend request already sent", Toast.LENGTH_SHORT).show();
+                                    } else {
+                                        // Get current user's profile info
+                                        db.collection("UserProfiles")
+                                                .document(currentUser.getUid())
+                                                .get()
+                                                .addOnSuccessListener(currentProfile -> {
+                                                    String senderName = currentProfile.getString("username");
+                                                    String senderAvatar = currentProfile.getString("profileImageUrl");
 
-                                    Friend sentRequest = new Friend(
-                                            currentUser.getUid(), // sender UID
-                                            senderName,           // sender name
-                                            senderAvatar,         // sender avatar
-                                            receiverId,           // receiver UID
-                                            "pending"
-                                    );
+                                                    Friend sentRequest = new Friend(
+                                                            currentUser.getUid(),
+                                                            senderName,
+                                                            senderAvatar,
+                                                            receiverId,
+                                                            "pending"
+                                                    );
 
-                                    db.collection("users")
-                                            .document(receiverId)
-                                            .collection("friends")
-                                            .document(currentUser.getUid())
-                                            .set(sentRequest)
-                                            .addOnSuccessListener(unused ->
-                                                    Toast.makeText(this, "Friend request sent", Toast.LENGTH_SHORT).show()
-                                            );
+                                                    // Save request to receiver's friend list
+                                                    db.collection("users")
+                                                            .document(receiverId)
+                                                            .collection("friends")
+                                                            .document(currentUser.getUid())
+                                                            .set(sentRequest)
+                                                            .addOnSuccessListener(unused -> {
+                                                                Toast.makeText(this, "Friend request sent", Toast.LENGTH_SHORT).show();
+                                                            });
+
+                                                    // (Optional) Add placeholder to sender's friend list
+                                                    Friend placeholder = new Friend(
+                                                            receiverId,
+                                                            username,
+                                                            query.getDocuments().get(0).getString("profileImageUrl"),
+                                                            currentUser.getUid(),
+                                                            "requested"
+                                                    );
+
+                                                    db.collection("users")
+                                                            .document(currentUser.getUid())
+                                                            .collection("friends")
+                                                            .document(receiverId)
+                                                            .set(placeholder);
+                                                });
+                                    }
                                 });
                     } else {
                         Toast.makeText(this, "User not found", Toast.LENGTH_SHORT).show();

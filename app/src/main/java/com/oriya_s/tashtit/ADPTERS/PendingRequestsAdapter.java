@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.oriya_s.model.Friend;
 import com.oriya_s.tashtit.R;
 
@@ -47,7 +48,10 @@ public class PendingRequestsAdapter extends RecyclerView.Adapter<PendingRequests
         holder.requestName.setText(request.getName());
 
         if (request.getAvatarUrl() != null && !request.getAvatarUrl().isEmpty()) {
-            Glide.with(context).load(request.getAvatarUrl()).placeholder(R.drawable.ic_user_placeholder).circleCrop().into(holder.requestAvatar);
+            Glide.with(context).load(request.getAvatarUrl())
+                    .placeholder(R.drawable.ic_user_placeholder)
+                    .circleCrop()
+                    .into(holder.requestAvatar);
         } else {
             holder.requestAvatar.setImageResource(R.drawable.ic_user_placeholder);
         }
@@ -58,23 +62,42 @@ public class PendingRequestsAdapter extends RecyclerView.Adapter<PendingRequests
 
     private void acceptRequest(Friend request, int position) {
         if (currentUser == null) return;
+
+        // Update status in receiver's list (current user)
         db.collection("users").document(currentUser.getUid())
                 .collection("friends").document(request.getFriendID())
                 .update("status", "accepted")
-                .addOnSuccessListener(unused -> db.collection("users")
-                        .document(request.getFriendID())
-                        .collection("friends")
-                        .document(currentUser.getUid())
-                        .update("status", "accepted")
-                        .addOnSuccessListener(aVoid -> {
-                            requests.remove(position);
-                            notifyItemRemoved(position);
-                            Toast.makeText(context, "Friend request accepted", Toast.LENGTH_SHORT).show();
-                        }));
+                .addOnSuccessListener(unused -> {
+                    // Get current user's profile to build reciprocal friend object
+                    db.collection("UserProfiles").document(currentUser.getUid()).get()
+                            .addOnSuccessListener(currentProfileDoc -> {
+                                String currentName = currentProfileDoc.getString("username");
+                                String currentAvatar = currentProfileDoc.getString("profileImageUrl");
+
+                                Friend reciprocalFriend = new Friend(
+                                        currentUser.getUid(),
+                                        currentName,
+                                        currentAvatar,
+                                        request.getFriendID(),
+                                        "accepted"
+                                );
+
+                                // Add reciprocal record to sender's friend list
+                                db.collection("users").document(request.getFriendID())
+                                        .collection("friends").document(currentUser.getUid())
+                                        .set(reciprocalFriend)
+                                        .addOnSuccessListener(aVoid -> {
+                                            requests.remove(position);
+                                            notifyItemRemoved(position);
+                                            Toast.makeText(context, "Friend request accepted", Toast.LENGTH_SHORT).show();
+                                        });
+                            });
+                });
     }
 
     private void declineRequest(Friend request, int position) {
         if (currentUser == null) return;
+
         db.collection("users").document(currentUser.getUid())
                 .collection("friends").document(request.getFriendID())
                 .delete()
