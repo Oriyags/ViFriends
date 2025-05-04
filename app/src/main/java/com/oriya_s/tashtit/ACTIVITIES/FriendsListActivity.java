@@ -80,13 +80,8 @@ public class FriendsListActivity extends AppCompatActivity {
     private void searchUserByUsername(String username) {
         if (currentUser == null || username.isEmpty()) return;
 
-        if (username.equals(currentUser.getDisplayName())) {
-            Toast.makeText(this, "You can't send a friend request to yourself", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        db.collection("UserProfiles")
-                .whereEqualTo("username", username)
+        db.collection("users")
+                .whereEqualTo("profile.username", username)
                 .get()
                 .addOnSuccessListener(query -> {
                     if (!query.isEmpty()) {
@@ -104,12 +99,12 @@ public class FriendsListActivity extends AppCompatActivity {
                                     if (existing.exists()) {
                                         Toast.makeText(this, "Friend request already sent", Toast.LENGTH_SHORT).show();
                                     } else {
-                                        db.collection("UserProfiles")
+                                        db.collection("users")
                                                 .document(currentUser.getUid())
                                                 .get()
-                                                .addOnSuccessListener(currentProfile -> {
-                                                    String senderName = currentProfile.getString("username");
-                                                    String senderAvatar = currentProfile.getString("profileImageUrl");
+                                                .addOnSuccessListener(currentDoc -> {
+                                                    String senderName = currentDoc.get("profile.username", String.class);
+                                                    String senderAvatar = currentDoc.get("profile.profileImageUrl", String.class);
 
                                                     Friend sentRequest = new Friend(
                                                             currentUser.getUid(),
@@ -124,14 +119,16 @@ public class FriendsListActivity extends AppCompatActivity {
                                                             .collection("friends")
                                                             .document(currentUser.getUid())
                                                             .set(sentRequest)
-                                                            .addOnSuccessListener(unused -> {
-                                                                Toast.makeText(this, "Friend request sent", Toast.LENGTH_SHORT).show();
-                                                            });
+                                                            .addOnSuccessListener(unused ->
+                                                                    Toast.makeText(this, "Friend request sent", Toast.LENGTH_SHORT).show()
+                                                            );
+
+                                                    String receiverAvatar = query.getDocuments().get(0).get("profile.profileImageUrl", String.class);
 
                                                     Friend placeholder = new Friend(
                                                             receiverId,
                                                             username,
-                                                            query.getDocuments().get(0).getString("profileImageUrl"),
+                                                            receiverAvatar,
                                                             currentUser.getUid(),
                                                             "requested"
                                                     );

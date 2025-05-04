@@ -6,4 +6,5 @@
     <string name="login">Login</string>
     <string name="register">Register</string>
     <string name="register_prompt">Dont have an account? Click here to register.</string>
+    <string name="send">Send</string>
 </resources>

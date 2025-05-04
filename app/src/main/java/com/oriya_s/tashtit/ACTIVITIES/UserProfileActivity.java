@@ -27,6 +27,7 @@ import com.google.firebase.storage.StorageReference;
 import com.oriya_s.tashtit.R;
 
 import java.util.Calendar;
+import java.util.Map;
 
 public class UserProfileActivity extends AppCompatActivity {
 
@@ -93,27 +94,31 @@ public class UserProfileActivity extends AppCompatActivity {
     private void loadUserData() {
         if (currentUser == null) return;
 
-        db.collection("UserProfiles")
+        db.collection("users")
                 .document(currentUser.getUid())
                 .get()
                 .addOnSuccessListener(document -> {
                     if (document.exists()) {
-                        String username = document.getString("username");
-                        String phone = document.getString("phoneNumber");
-                        String city = document.getString("locationID");
-                        String bio = document.getString("bio");
-                        String profileImageUrl = document.getString("profileImageUrl");
-                        long dobMillis = document.getLong("dob") != null ? document.getLong("dob") : 0;
+                        Object profileObj = document.get("profile");
+                        if (profileObj instanceof Map) {
+                            Map<String, Object> profile = (Map<String, Object>) profileObj;
+                            String username = (String) profile.get("username");
+                            String phone = (String) profile.get("phoneNumber");
+                            String city = (String) profile.get("locationID");
+                            String bio = (String) profile.get("bio");
+                            String profileImageUrl = (String) profile.get("profileImageUrl");
+                            long dobMillis = profile.get("dob") instanceof Number ? ((Number) profile.get("dob")).longValue() : 0;
 
-                        tvUsername.setText(username != null ? username : "");
-                        tvCity.setText(city != null ? city : "");
-                        tvPhone.setText(phone != null ? phone : "");
-                        etBio.setText(bio != null ? bio : "");
-                        tvDOB.setText(dobMillis > 0 ? formatDate(dobMillis) : "Not set");
-                        tvAge.setText(dobMillis > 0 ? calculateAge(dobMillis) + " years old" : "");
+                            tvUsername.setText(username != null ? username : "");
+                            tvCity.setText(city != null ? city : "");
+                            tvPhone.setText(phone != null ? phone : "");
+                            etBio.setText(bio != null ? bio : "");
+                            tvDOB.setText(dobMillis > 0 ? formatDate(dobMillis) : "Not set");
+                            tvAge.setText(dobMillis > 0 ? calculateAge(dobMillis) + " years old" : "");
 
-                        if (profileImageUrl != null && !profileImageUrl.isEmpty()) {
-                            Glide.with(this).load(profileImageUrl).into(profileImage);
+                            if (profileImageUrl != null && !profileImageUrl.isEmpty()) {
+                                Glide.with(this).load(profileImageUrl).into(profileImage);
+                            }
                         }
                     }
                 })
@@ -126,9 +131,9 @@ public class UserProfileActivity extends AppCompatActivity {
         String updatedBio = etBio.getText().toString().trim();
         if (currentUser == null) return;
 
-        db.collection("UserProfiles")
+        db.collection("users")
                 .document(currentUser.getUid())
-                .update("bio", updatedBio)
+                .update("profile.bio", updatedBio)
                 .addOnSuccessListener(unused ->
                         Toast.makeText(this, "Bio updated", Toast.LENGTH_SHORT).show()
                 )
@@ -152,9 +157,9 @@ public class UserProfileActivity extends AppCompatActivity {
         StorageReference ref = storage.getReference("profile_images/" + currentUser.getUid() + ".jpg");
         ref.putFile(imageUri)
                 .addOnSuccessListener(task -> ref.getDownloadUrl().addOnSuccessListener(uri -> {
-                    db.collection("UserProfiles")
+                    db.collection("users")
                             .document(currentUser.getUid())
-                            .update("profileImageUrl", uri.toString())
+                            .update("profile.profileImageUrl", uri.toString())
                             .addOnSuccessListener(unused ->
                                     Toast.makeText(this, "Profile picture updated", Toast.LENGTH_SHORT).show()
                             )

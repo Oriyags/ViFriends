@@ -63,7 +63,7 @@ public class AddEventActivity extends AppCompatActivity {
         saveButton = findViewById(R.id.save_event_button);
         selectedImage = findViewById(R.id.selected_image);
         pickVideoButton = findViewById(R.id.pick_video_button);
-        selectedVideoThumb = findViewById(R.id.selected_video_thumb); // You need to add this in the layout
+        selectedVideoThumb = findViewById(R.id.selected_video_thumb);
 
         initializePickers();
         setListeners();

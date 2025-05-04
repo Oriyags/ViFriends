@@ -100,9 +100,12 @@ public class CreateAccountActivity extends BaseActivity {
             return;
         }
 
-        db.collection("UserProfiles")
+        Map<String, Object> wrapper = new HashMap<>();
+        wrapper.put("profile", userProfile);
+
+        db.collection("users")
                 .document(uid)
-                .set(userProfile)
+                .set(wrapper)
                 .addOnSuccessListener(unused -> {
                     Toast.makeText(this, "User registered successfully!", Toast.LENGTH_SHORT).show();
                     startActivity(new Intent(CreateAccountActivity.this, LogInActivity.class));
