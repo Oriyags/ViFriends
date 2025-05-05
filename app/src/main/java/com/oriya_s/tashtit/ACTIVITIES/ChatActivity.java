@@ -1,18 +1,17 @@
 package com.oriya_s.tashtit.ACTIVITIES;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -20,16 +19,13 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
 import com.oriya_s.model.Message;
 import com.oriya_s.tashtit.ADPTERS.MessageAdapter;
 import com.oriya_s.tashtit.R;
@@ -38,8 +34,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.annotation.Nullable;
 
 public class ChatActivity extends AppCompatActivity {
 
@@ -54,6 +48,10 @@ public class ChatActivity extends AppCompatActivity {
 
     private String otherUserId;
     private String chatId;
+
+    private LinearLayout chatHeader;
+    private ImageView ivUserAvatar;
+    private TextView tvUserName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,6 +71,9 @@ public class ChatActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.recycler_messages);
         inputMessage = findViewById(R.id.et_message);
         btnSend = findViewById(R.id.btn_send);
+        ivUserAvatar = findViewById(R.id.iv_user_avatar);
+        tvUserName = findViewById(R.id.tv_user_name);
+        chatHeader = findViewById(R.id.chat_header);
 
         messageList = new ArrayList<>();
         adapter = new MessageAdapter(messageList);
@@ -85,9 +86,33 @@ public class ChatActivity extends AppCompatActivity {
             return;
         }
 
+        loadOtherUserProfile();
         createOrLoadChat();
 
         btnSend.setOnClickListener(v -> sendMessage());
+
+        chatHeader.setOnClickListener(v -> {
+            Intent intent = new Intent(ChatActivity.this, UserProfileActivity.class);
+            intent.putExtra("userId", otherUserId);
+            startActivity(intent);
+        });
+    }
+
+    private void loadOtherUserProfile() {
+        db.collection("users")
+                .document(otherUserId)
+                .get()
+                .addOnSuccessListener(document -> {
+                    if (document.exists() && document.contains("profile")) {
+                        Map<String, Object> profile = (Map<String, Object>) document.get("profile");
+                        String name = (String) profile.get("username");
+                        String avatarUrl = (String) profile.get("profileImageUrl");
+                        tvUserName.setText(name != null ? name : "");
+                        if (avatarUrl != null && !avatarUrl.isEmpty()) {
+                            Glide.with(this).load(avatarUrl).into(ivUserAvatar);
+                        }
+                    }
+                });
     }
 
     private void createOrLoadChat() {
@@ -101,7 +126,6 @@ public class ChatActivity extends AppCompatActivity {
                 chatId = doc.getString("chatId");
                 loadMessages();
             } else {
-                // Create new chat
                 chatId = db.collection("Chats").document().getId();
                 Map<String, Object> chatMeta = new HashMap<>();
                 chatMeta.put("chatId", chatId);
