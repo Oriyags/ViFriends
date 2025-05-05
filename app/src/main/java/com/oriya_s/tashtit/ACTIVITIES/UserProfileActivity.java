@@ -32,8 +32,9 @@ import java.util.Map;
 public class UserProfileActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;
-    private FirebaseUser currentUser;
     private FirebaseStorage storage;
+    private FirebaseUser currentUser;
+    private String viewedUserId;
 
     private ImageView profileImage;
     private EditText etBio;
@@ -55,6 +56,15 @@ public class UserProfileActivity extends AppCompatActivity {
             return insets;
         });
 
+        db = FirebaseFirestore.getInstance();
+        storage = FirebaseStorage.getInstance();
+        currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
+        viewedUserId = getIntent().getStringExtra("userId");
+        if (viewedUserId == null || viewedUserId.isEmpty()) {
+            viewedUserId = currentUser != null ? currentUser.getUid() : null;
+        }
+
         initializeViews();
         loadUserData();
     }
@@ -68,10 +78,6 @@ public class UserProfileActivity extends AppCompatActivity {
         tvAge = findViewById(R.id.tv_age);
         etBio = findViewById(R.id.et_bio);
         btnSaveChanges = findViewById(R.id.btn_save_changes);
-
-        db = FirebaseFirestore.getInstance();
-        storage = FirebaseStorage.getInstance();
-        currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
         imagePickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
@@ -92,10 +98,10 @@ public class UserProfileActivity extends AppCompatActivity {
     }
 
     private void loadUserData() {
-        if (currentUser == null) return;
+        if (viewedUserId == null) return;
 
         db.collection("users")
-                .document(currentUser.getUid())
+                .document(viewedUserId)
                 .get()
                 .addOnSuccessListener(document -> {
                     if (document.exists()) {
@@ -129,7 +135,7 @@ public class UserProfileActivity extends AppCompatActivity {
 
     private void saveBioToFirestore() {
         String updatedBio = etBio.getText().toString().trim();
-        if (currentUser == null) return;
+        if (currentUser == null || !currentUser.getUid().equals(viewedUserId)) return;
 
         db.collection("users")
                 .document(currentUser.getUid())
@@ -143,14 +149,15 @@ public class UserProfileActivity extends AppCompatActivity {
     }
 
     private void openImagePicker() {
+        if (currentUser == null || !currentUser.getUid().equals(viewedUserId)) return;
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         intent.setType("image/*");
         imagePickerLauncher.launch(intent);
     }
 
     private void uploadProfileImage(Uri imageUri) {
-        if (currentUser == null || imageUri == null) {
-            Toast.makeText(this, "Image not selected or user not logged in.", Toast.LENGTH_SHORT).show();
+        if (currentUser == null || imageUri == null || !currentUser.getUid().equals(viewedUserId)) {
+            Toast.makeText(this, "Image not selected or unauthorized.", Toast.LENGTH_SHORT).show();
             return;
         }
 
