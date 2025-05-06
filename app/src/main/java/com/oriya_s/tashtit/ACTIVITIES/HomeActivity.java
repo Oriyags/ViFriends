@@ -103,7 +103,7 @@ public class HomeActivity extends AppCompatActivity {
         if (id == R.id.nav_user) {
             startActivity(new Intent(HomeActivity.this, UserProfileActivity.class));
         } else if (id == R.id.nav_settings) {
-            showToast("Settings");
+            startActivity(new Intent(HomeActivity.this, SettingsActivity.class)); // ✅ Open settings screen
         } else if (id == R.id.nav_logout) {
             FirebaseAuth.getInstance().signOut();
             Intent intent = new Intent(HomeActivity.this, LogInActivity.class);
@@ -113,10 +113,6 @@ public class HomeActivity extends AppCompatActivity {
         }
 
         drawerLayout.closeDrawer(navigationView);
-    }
-
-    private void showToast(String message) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
     private void loadEventsFromFirebase() {
