@@ -103,7 +103,7 @@ public class HomeActivity extends AppCompatActivity {
         if (id == R.id.nav_user) {
             startActivity(new Intent(HomeActivity.this, UserProfileActivity.class));
         } else if (id == R.id.nav_settings) {
-            startActivity(new Intent(HomeActivity.this, SettingsActivity.class)); // ✅ Open settings screen
+            startActivity(new Intent(HomeActivity.this, SettingsActivity.class));
         } else if (id == R.id.nav_logout) {
             FirebaseAuth.getInstance().signOut();
             Intent intent = new Intent(HomeActivity.this, LogInActivity.class);
