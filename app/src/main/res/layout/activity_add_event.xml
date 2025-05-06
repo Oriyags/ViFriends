@@ -2,13 +2,25 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp"
-    android:fillViewport="true">
+    android:fillViewport="true"
+    android:background="@drawable/bg_gradient_event"
+    android:padding="24dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add New Event"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="16dp" />
 
         <!-- Event Name -->
         <EditText
@@ -16,10 +28,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Event Name"
-            android:inputType="textCapSentences|textMultiLine"
-            android:maxLines="3"
-            android:singleLine="false"
-            android:imeOptions="actionNext" />
+            android:background="@drawable/rounded_input"
+            android:padding="16dp"
+            android:textColor="#000000"
+            android:textColorHint="#999999"
+            android:layout_marginBottom="12dp" />
 
         <!-- Event Description -->
         <EditText
@@ -27,31 +40,40 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Description"
-            android:inputType="textCapSentences|textMultiLine"
             android:minLines="3"
             android:maxLines="6"
-            android:singleLine="false"
-            android:imeOptions="actionDone" />
+            android:gravity="top|start"
+            android:background="@drawable/rounded_input"
+            android:padding="16dp"
+            android:textColor="#000000"
+            android:textColorHint="#999999"
+            android:layout_marginBottom="12dp" />
 
         <!-- Date Picker -->
         <Button
             android:id="@+id/pick_date_button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Pick Date" />
+            android:text="Pick Date"
+            android:backgroundTint="#0288D1"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="4dp" />
 
         <TextView
             android:id="@+id/date_text"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="No date selected"
-            android:paddingTop="8dp" />
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="12dp" />
 
         <!-- Visibility Options -->
         <RadioGroup
             android:id="@+id/visibility_group"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="12dp">
 
             <RadioButton
                 android:id="@+id/visible_all"
@@ -71,9 +93,9 @@
             android:id="@+id/selected_image"
             android:layout_width="match_parent"
             android:layout_height="200dp"
-            android:layout_marginTop="12dp"
-            android:background="#CCCCCC"
-            android:scaleType="centerCrop" />
+            android:background="#EEEEEE"
+            android:scaleType="centerCrop"
+            android:layout_marginBottom="12dp" />
 
         <!-- Pick Video Button -->
         <Button
@@ -81,24 +103,29 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Pick Video"
-            android:layout_marginTop="12dp" />
+            android:backgroundTint="#7B1FA2"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="12dp" />
 
-        <!-- Video Thumbnail Preview -->
+        <!-- Video Thumbnail -->
         <ImageView
             android:id="@+id/selected_video_thumb"
             android:layout_width="match_parent"
             android:layout_height="200dp"
-            android:layout_marginTop="8dp"
             android:visibility="gone"
-            android:background="#CCCCCC"
-            android:scaleType="centerCrop" />
+            android:background="#EEEEEE"
+            android:scaleType="centerCrop"
+            android:layout_marginBottom="12dp" />
 
         <!-- Choose Friends -->
         <Button
             android:id="@+id/choose_friends_button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Choose Friends" />
+            android:text="Choose Friends"
+            android:backgroundTint="#009688"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="16dp" />
 
         <!-- Save Button -->
         <Button
@@ -106,6 +133,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Save Event"
-            android:layout_marginTop="16dp" />
+            android:backgroundTint="#4CAF50"
+            android:textColor="#FFFFFF" />
     </LinearLayout>
 </ScrollView>
