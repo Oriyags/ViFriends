@@ -4,8 +4,9 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F3F7FA"
-    android:padding="16dp">
+    android:background="@drawable/bg_gradient_settings"
+    android:padding="24dp"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -28,11 +29,11 @@
             android:id="@+id/tv_username"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:text="Username"
             android:textStyle="bold"
             android:textSize="22sp"
-            android:textColor="#222222"
-            android:layout_marginTop="12dp"
-            android:text="Username" />
+            android:textColor="#FFFFFF"
+            android:layout_marginTop="12dp" />
 
         <!-- Bio Field -->
         <EditText
@@ -70,7 +71,6 @@
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
             android:layout_marginBottom="24dp"
             android:layout_marginHorizontal="8dp"
             app:cardCornerRadius="16dp"
