@@ -2,32 +2,27 @@ package com.oriya_s.tashtit.ACTIVITIES;
 
 import android.app.AlertDialog;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.oriya_s.tashtit.R;
+
+import java.util.List;
 
 public class SettingsActivity extends AppCompatActivity {
 
@@ -42,6 +37,7 @@ public class SettingsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_settings);
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -95,16 +91,62 @@ public class SettingsActivity extends AppCompatActivity {
 
         String uid = currentUser.getUid();
 
-        // Delete profile picture
+        // Delete profile image
         StorageReference profileRef = storage.getReference("profile_images/" + uid + ".jpg");
-        profileRef.delete(); // Optional: ignore failure silently
+        profileRef.delete(); // Ignore errors if not found
 
-        // Delete subcollections
+        // Remove from other users' friends lists
+        db.collectionGroup("friends")
+                .whereEqualTo("friendID", uid)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    for (QueryDocumentSnapshot doc : snapshot) {
+                        doc.getReference().delete();
+                    }
+                });
+
+        // Delete from other users' chat metadata + delete chat documents and messages
+        db.collection("Chats")
+                .whereArrayContains("participants", uid)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    for (QueryDocumentSnapshot chatDoc : snapshot) {
+                        String chatId = chatDoc.getId();
+                        List<?> participants = (List<?>) chatDoc.get("participants");
+
+                        // Delete messages in chat
+                        db.collection("Chats").document(chatId)
+                                .collection("messages")
+                                .get()
+                                .addOnSuccessListener(messages -> {
+                                    for (QueryDocumentSnapshot msg : messages) {
+                                        msg.getReference().delete();
+                                    }
+                                });
+
+                        // Delete chat document
+                        db.collection("Chats").document(chatId).delete();
+
+                        // Remove from users' chat metadata
+                        for (Object userIdObj : participants) {
+                            String participantId = userIdObj.toString();
+                            if (!participantId.equals(uid)) {
+                                db.collection("users")
+                                        .document(participantId)
+                                        .collection("chats")
+                                        .document(uid)
+                                        .delete();
+                            }
+                        }
+                    }
+                });
+
+        // Delete user’s own subcollections
         deleteSubcollection("users", uid, "chats");
         deleteSubcollection("users", uid, "friends");
         deleteSubcollection("users", uid, "events");
 
-        // Delete user document
+        // Delete user document and Auth account
         db.collection("users").document(uid).delete()
                 .addOnSuccessListener(aVoid -> {
                     currentUser.delete()
@@ -121,11 +163,9 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void deleteSubcollection(String parentCollection, String docId, String subcollection) {
         CollectionReference subRef = db.collection(parentCollection).document(docId).collection(subcollection);
-        subRef.get().addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                for (QueryDocumentSnapshot doc : task.getResult()) {
-                    doc.getReference().delete();
-                }
+        subRef.get().addOnSuccessListener(snapshot -> {
+            for (QueryDocumentSnapshot doc : snapshot) {
+                doc.getReference().delete();
             }
         });
     }

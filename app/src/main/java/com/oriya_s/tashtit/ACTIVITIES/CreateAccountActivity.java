@@ -1,10 +1,12 @@
 package com.oriya_s.tashtit.ACTIVITIES;
 
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Patterns;
 import android.view.View;
 import android.widget.Button;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -19,6 +21,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.oriya_s.tashtit.ACTIVITIES.BASE.BaseActivity;
 import com.oriya_s.tashtit.R;
 
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,6 +32,8 @@ public class CreateAccountActivity extends BaseActivity {
 
     private FirebaseAuth auth;
     private FirebaseFirestore db;
+
+    private long dobInMillis = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +70,8 @@ public class CreateAccountActivity extends BaseActivity {
 
     @Override
     protected void setListeners() {
+        etDOB.setOnClickListener(v -> showDatePicker());
+
         btnCreateAccount.setOnClickListener(v -> {
             if (!validate()) return;
 
@@ -85,20 +92,22 @@ public class CreateAccountActivity extends BaseActivity {
         btnCancel.setOnClickListener(v -> finish());
     }
 
+    private void showDatePicker() {
+        Calendar calendar = Calendar.getInstance();
+        new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
+            calendar.set(year, month, dayOfMonth);
+            dobInMillis = calendar.getTimeInMillis();
+            etDOB.setText(dayOfMonth + "/" + (month + 1) + "/" + year);
+        }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show();
+    }
+
     private void saveUserProfile(String uid) {
         Map<String, Object> userProfile = new HashMap<>();
         userProfile.put("username", etUserName.getText().toString().trim());
         userProfile.put("email", etEmail.getText().toString().trim());
         userProfile.put("phoneNumber", etPhoneNumber.getText().toString().trim());
         userProfile.put("locationID", etLocation.getText().toString().trim());
-
-        String dobText = etDOB.getText().toString().trim();
-        try {
-            userProfile.put("dob", dobText.isEmpty() ? 0 : Long.parseLong(dobText));
-        } catch (NumberFormatException e) {
-            Toast.makeText(this, "Invalid date of birth format", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        userProfile.put("dob", dobInMillis);
 
         Map<String, Object> wrapper = new HashMap<>();
         wrapper.put("profile", userProfile);
@@ -140,6 +149,11 @@ public class CreateAccountActivity extends BaseActivity {
 
         if (!password.equals(confirmPassword)) {
             etConfirmPassword.setError("Passwords do not match");
+            return false;
+        }
+
+        if (dobInMillis == 0) {
+            etDOB.setError("Please select a valid date of birth");
             return false;
         }
 

@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.oriya_s.model.Friend;
 import com.oriya_s.tashtit.ADPTERS.FriendsListAdapter;
 import com.oriya_s.tashtit.R;
@@ -149,6 +150,7 @@ public class FriendsListActivity extends AppCompatActivity {
                         Toast.makeText(this, "Error searching user", Toast.LENGTH_SHORT).show());
     }
 
+    // ✅ Updated to clean up non-existent friends from UI and Firestore
     private void loadFriends() {
         if (currentUser == null) return;
 
@@ -156,14 +158,30 @@ public class FriendsListActivity extends AppCompatActivity {
                 .document(currentUser.getUid())
                 .collection("friends")
                 .whereEqualTo("status", "accepted")
-                .get()
-                .addOnSuccessListener(snapshot -> {
+                .addSnapshotListener((snapshot, error) -> {
+                    if (error != null || snapshot == null) return;
+
                     friends.clear();
-                    snapshot.forEach(doc -> {
+                    for (QueryDocumentSnapshot doc : snapshot) {
                         Friend f = doc.toObject(Friend.class);
-                        friends.add(f);
-                    });
-                    adapter.notifyDataSetChanged();
+                        String friendId = f.getFriendID();
+
+                        db.collection("users").document(friendId)
+                                .get()
+                                .addOnSuccessListener(userDoc -> {
+                                    if (userDoc.exists()) {
+                                        friends.add(f);
+                                        adapter.notifyDataSetChanged();
+                                    } else {
+                                        // Friend has been deleted – clean up reference
+                                        db.collection("users")
+                                                .document(currentUser.getUid())
+                                                .collection("friends")
+                                                .document(friendId)
+                                                .delete();
+                                    }
+                                });
+                    }
                 });
     }
 
