@@ -32,10 +32,19 @@ public class FriendsListAdapter extends RecyclerView.Adapter<FriendsListAdapter.
         void onFriendClicked(View view, Friend friend);
     }
 
-    private OnFriendClickListener listener;
+    public interface OnFriendRemovedListener {
+        void onFriendRemoved();
+    }
+
+    private OnFriendClickListener clickListener;
+    private OnFriendRemovedListener removeListener;
 
     public void setOnFriendClickListener(OnFriendClickListener listener) {
-        this.listener = listener;
+        this.clickListener = listener;
+    }
+
+    public void setOnFriendRemovedListener(OnFriendRemovedListener listener) {
+        this.removeListener = listener;
     }
 
     public FriendsListAdapter(Context context, List<Friend> friends, FirebaseFirestore db, FirebaseUser currentUser) {
@@ -77,8 +86,8 @@ public class FriendsListAdapter extends RecyclerView.Adapter<FriendsListAdapter.
         });
 
         holder.itemView.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onFriendClicked(v, friend);
+            if (clickListener != null) {
+                clickListener.onFriendClicked(v, friend);
             }
         });
     }
@@ -95,6 +104,11 @@ public class FriendsListAdapter extends RecyclerView.Adapter<FriendsListAdapter.
                     friends.remove(position);
                     notifyItemRemoved(position);
                     Toast.makeText(context, "Friend removed", Toast.LENGTH_SHORT).show();
+
+                    // Notify external listener (e.g., activity) that a friend was removed
+                    if (removeListener != null) {
+                        removeListener.onFriendRemoved();
+                    }
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(context, "Failed to remove friend", Toast.LENGTH_SHORT).show());

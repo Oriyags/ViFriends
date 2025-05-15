@@ -55,6 +55,13 @@ public class FriendsListActivity extends AppCompatActivity {
 
         adapter.setOnFriendClickListener(this::showFriendOptions);
 
+        // 🔁 Notify HomeActivity with updated friend count
+        adapter.setOnFriendRemovedListener(() -> {
+            Intent resultIntent = new Intent();
+            resultIntent.putExtra("updatedFriendCount", friends.size());
+            setResult(RESULT_OK, resultIntent);
+        });
+
         btnAddFriend.setOnClickListener(v -> showSearchDialog());
 
         btnPendingRequests.setOnClickListener(v -> {
@@ -150,7 +157,6 @@ public class FriendsListActivity extends AppCompatActivity {
                         Toast.makeText(this, "Error searching user", Toast.LENGTH_SHORT).show());
     }
 
-    // ✅ Updated to clean up non-existent friends from UI and Firestore
     private void loadFriends() {
         if (currentUser == null) return;
 
@@ -173,7 +179,6 @@ public class FriendsListActivity extends AppCompatActivity {
                                         friends.add(f);
                                         adapter.notifyDataSetChanged();
                                     } else {
-                                        // Friend has been deleted – clean up reference
                                         db.collection("users")
                                                 .document(currentUser.getUid())
                                                 .collection("friends")

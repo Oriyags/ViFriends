@@ -29,6 +29,7 @@ import java.util.ArrayList;
 public class HomeActivity extends AppCompatActivity {
 
     private static final int ADD_EVENT_REQUEST = 1;
+    private static final int FRIENDS_REQUEST_CODE = 2; // 👈 Added
 
     private ImageButton menuButton, eventsButton;
     private Button btnViewFriends;
@@ -52,6 +53,7 @@ public class HomeActivity extends AppCompatActivity {
         initializeViews();
         setListeners();
         loadEventsFromFirebase();
+        loadFriendsCount(); // ✅ Initial load of friends count
     }
 
     private void initializeViews() {
@@ -88,7 +90,7 @@ public class HomeActivity extends AppCompatActivity {
 
         btnViewFriends.setOnClickListener(v -> {
             Intent intent = new Intent(HomeActivity.this, FriendsListActivity.class);
-            startActivity(intent);
+            startActivityForResult(intent, FRIENDS_REQUEST_CODE); // ✅ requestCode added
         });
 
         navigationView.setNavigationItemSelectedListener(item -> {
@@ -134,6 +136,43 @@ public class HomeActivity extends AppCompatActivity {
                     }
                     adapter.notifyDataSetChanged();
                 });
+    }
+
+    private void loadFriendsCount() {
+        if (currentUser == null) return;
+
+        firestore.collection("users")
+                .document(currentUser.getUid())
+                .collection("friends")
+                .whereEqualTo("status", "accepted")
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    int count = snapshot.size();
+                    updateFriendCountText(count);
+                });
+    }
+
+    private void updateFriendCountText(int count) {
+        String message = count == 1 ? "You have 1 friend." : "You have " + count + " friends.";
+        friendsSummaryText.setText(message);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadFriendsCount(); // ✅ fallback update
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == FRIENDS_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
+            int updatedCount = data.getIntExtra("updatedFriendCount", -1);
+            if (updatedCount != -1) {
+                updateFriendCountText(updatedCount); // ✅ update count without refetch
+            }
+        }
     }
 
     public void deleteEvent(Event event, int position) {
