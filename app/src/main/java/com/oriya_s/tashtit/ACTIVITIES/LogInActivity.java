@@ -1,6 +1,7 @@
 package com.oriya_s.tashtit.ACTIVITIES;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -8,10 +9,12 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -26,8 +29,14 @@ public class LogInActivity extends BaseActivity {
     private EditText etEmail, etPassword;
     private Button btnLogin, btnRegister;
     private ProgressBar progressBar;
+    private SwitchCompat swSaveUser;
 
     private FirebaseAuth firebaseAuth;
+
+    private static final String PREFS_NAME = "loginPrefs";
+    private static final String KEY_EMAIL = "email";
+    private static final String KEY_PASSWORD = "password";
+    private static final String KEY_REMEMBER = "remember";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +52,7 @@ public class LogInActivity extends BaseActivity {
 
         firebaseAuth = FirebaseAuth.getInstance();
         initializeViews();
+        loadPreferences();
     }
 
     protected void initializeViews() {
@@ -51,6 +61,7 @@ public class LogInActivity extends BaseActivity {
         btnLogin = findViewById(R.id.btnLogin);
         btnRegister = findViewById(R.id.btnRegister);
         progressBar = findViewById(R.id.progressBar);
+        swSaveUser = findViewById(R.id.swSaveUser);
         setListeners();
     }
 
@@ -75,6 +86,12 @@ public class LogInActivity extends BaseActivity {
                         progressBar.setVisibility(View.GONE);
 
                         if (task.isSuccessful()) {
+                            if (swSaveUser.isChecked()) {
+                                savePreferences(email, password);
+                            } else {
+                                clearPreferences();
+                            }
+
                             FirebaseUser user = firebaseAuth.getCurrentUser();
                             if (user != null) {
                                 showStyledToast("Login successful");
@@ -123,6 +140,30 @@ public class LogInActivity extends BaseActivity {
         toast.setDuration(Toast.LENGTH_SHORT);
         toast.setView(layout);
         toast.show();
+    }
+
+    private void savePreferences(String email, String password) {
+        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        preferences.edit()
+                .putString(KEY_EMAIL, email)
+                .putString(KEY_PASSWORD, password)
+                .putBoolean(KEY_REMEMBER, true)
+                .apply();
+    }
+
+    private void loadPreferences() {
+        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        boolean remember = preferences.getBoolean(KEY_REMEMBER, false);
+        if (remember) {
+            etEmail.setText(preferences.getString(KEY_EMAIL, ""));
+            etPassword.setText(preferences.getString(KEY_PASSWORD, ""));
+            swSaveUser.setChecked(true);
+        }
+    }
+
+    private void clearPreferences() {
+        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        preferences.edit().clear().apply();
     }
 
     @Override
