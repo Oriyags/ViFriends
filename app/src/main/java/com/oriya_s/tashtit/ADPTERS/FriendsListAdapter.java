@@ -2,6 +2,7 @@ package com.oriya_s.tashtit.ADPTERS;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -63,6 +64,7 @@ public class FriendsListAdapter extends RecyclerView.Adapter<FriendsListAdapter.
 
     @Override
     public void onBindViewHolder(@NonNull FriendViewHolder holder, int position) {
+        if (position >= friends.size()) return;
         Friend friend = friends.get(position);
         holder.friendName.setText(friend.getName());
 
@@ -77,12 +79,15 @@ public class FriendsListAdapter extends RecyclerView.Adapter<FriendsListAdapter.
         }
 
         holder.btnRemove.setOnClickListener(v -> {
-            new AlertDialog.Builder(context)
-                    .setTitle("Remove Friend")
-                    .setMessage("Are you sure you want to remove " + friend.getName() + "?")
-                    .setPositiveButton("Remove", (dialog, which) -> removeFriend(friend, position))
-                    .setNegativeButton("Cancel", null)
-                    .show();
+            int adapterPosition = holder.getBindingAdapterPosition();
+            if (adapterPosition != RecyclerView.NO_POSITION && adapterPosition < friends.size()) {
+                new AlertDialog.Builder(context)
+                        .setTitle("Remove Friend")
+                        .setMessage("Are you sure you want to remove " + friend.getName() + "?")
+                        .setPositiveButton("Remove", (dialog, which) -> removeFriend(adapterPosition, friend))
+                        .setNegativeButton("Cancel", null)
+                        .show();
+            }
         });
 
         holder.itemView.setOnClickListener(v -> {
@@ -92,26 +97,31 @@ public class FriendsListAdapter extends RecyclerView.Adapter<FriendsListAdapter.
         });
     }
 
-    private void removeFriend(Friend friend, int position) {
-        if (currentUser == null) return;
+    private void removeFriend(int position, Friend friend) {
+        if (currentUser == null || position == RecyclerView.NO_POSITION || position >= friends.size()) return;
 
-        db.collection("users")
-                .document(currentUser.getUid())
-                .collection("friends")
-                .document(friend.getFriendID())
+        String myId = currentUser.getUid();
+        String friendId = friend.getFriendID();
+
+        db.collection("users").document(myId)
+                .collection("friends").document(friendId)
                 .delete()
                 .addOnSuccessListener(unused -> {
-                    friends.remove(position);
-                    notifyItemRemoved(position);
-                    Toast.makeText(context, "Friend removed", Toast.LENGTH_SHORT).show();
+                    db.collection("users").document(friendId)
+                            .collection("friends").document(myId)
+                            .delete();
 
-                    // Notify external listener (e.g., activity) that a friend was removed
-                    if (removeListener != null) {
-                        removeListener.onFriendRemoved();
+                    if (position < friends.size()) {
+                        friends.remove(position);
+                        notifyItemRemoved(position);
+                        Toast.makeText(context, "Friend removed", Toast.LENGTH_SHORT).show();
+                        if (removeListener != null) removeListener.onFriendRemoved();
                     }
                 })
-                .addOnFailureListener(e ->
-                        Toast.makeText(context, "Failed to remove friend", Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> {
+                    Log.e("FriendRemoval", "Failed to delete friend", e);
+                    Toast.makeText(context, "Failed to remove friend", Toast.LENGTH_SHORT).show();
+                });
     }
 
     @Override

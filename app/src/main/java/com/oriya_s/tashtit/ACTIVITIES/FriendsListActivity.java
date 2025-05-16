@@ -55,7 +55,6 @@ public class FriendsListActivity extends AppCompatActivity {
 
         adapter.setOnFriendClickListener(this::showFriendOptions);
 
-        // 🔁 Notify HomeActivity with updated friend count
         adapter.setOnFriendRemovedListener(() -> {
             Intent resultIntent = new Intent();
             resultIntent.putExtra("updatedFriendCount", friends.size());
@@ -168,6 +167,7 @@ public class FriendsListActivity extends AppCompatActivity {
                     if (error != null || snapshot == null) return;
 
                     friends.clear();
+
                     for (QueryDocumentSnapshot doc : snapshot) {
                         Friend f = doc.toObject(Friend.class);
                         String friendId = f.getFriendID();
@@ -176,8 +176,18 @@ public class FriendsListActivity extends AppCompatActivity {
                                 .get()
                                 .addOnSuccessListener(userDoc -> {
                                     if (userDoc.exists()) {
-                                        friends.add(f);
-                                        adapter.notifyDataSetChanged();
+                                        boolean exists = false;
+                                        for (Friend existing : friends) {
+                                            if (existing.getFriendID().equals(friendId)) {
+                                                exists = true;
+                                                break;
+                                            }
+                                        }
+
+                                        if (!exists) {
+                                            friends.add(f);
+                                            runOnUiThread(() -> adapter.notifyDataSetChanged());
+                                        }
                                     } else {
                                         db.collection("users")
                                                 .document(currentUser.getUid())
