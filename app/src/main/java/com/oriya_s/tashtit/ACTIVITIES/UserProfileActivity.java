@@ -1,16 +1,12 @@
 package com.oriya_s.tashtit.ACTIVITIES;
 
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.TextView;
-import android.widget.Toast;
-
+import android.widget.*;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -28,6 +24,7 @@ import com.google.firebase.storage.StorageReference;
 import com.oriya_s.tashtit.R;
 
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.Map;
 
 public class UserProfileActivity extends AppCompatActivity {
@@ -38,11 +35,12 @@ public class UserProfileActivity extends AppCompatActivity {
     private String viewedUserId;
 
     private ImageView profileImage;
-    private EditText etBio;
+    private EditText etUsername, etBio, etCity, etPhone, etDOB;
+    private TextView tvAge;
     private Button btnSaveChanges;
-    private TextView tvUsername, tvCity, tvPhone, tvDOB, tvAge;
-
     private Uri selectedImageUri;
+    private long dobMillis = 0;
+
     private ActivityResultLauncher<Intent> imagePickerLauncher;
 
     @Override
@@ -72,10 +70,10 @@ public class UserProfileActivity extends AppCompatActivity {
 
     private void initializeViews() {
         profileImage = findViewById(R.id.profile_image);
-        tvUsername = findViewById(R.id.tv_username);
-        tvCity = findViewById(R.id.tv_city);
-        tvPhone = findViewById(R.id.tv_phone);
-        tvDOB = findViewById(R.id.tv_dob);
+        etUsername = findViewById(R.id.et_username);
+        etCity = findViewById(R.id.tv_city);
+        etPhone = findViewById(R.id.tv_phone);
+        etDOB = findViewById(R.id.tv_dob);
         tvAge = findViewById(R.id.tv_age);
         etBio = findViewById(R.id.et_bio);
         btnSaveChanges = findViewById(R.id.btn_save_changes);
@@ -88,14 +86,13 @@ public class UserProfileActivity extends AppCompatActivity {
                         if (selectedImageUri != null) {
                             Glide.with(this).load(selectedImageUri).into(profileImage);
                             uploadProfileImage(selectedImageUri);
-                        } else {
-                            Toast.makeText(this, "No image selected.", Toast.LENGTH_SHORT).show();
                         }
                     }
                 });
 
+        etDOB.setOnClickListener(v -> showDatePicker());
         profileImage.setOnClickListener(v -> openImagePicker());
-        btnSaveChanges.setOnClickListener(v -> saveBioToFirestore());
+        btnSaveChanges.setOnClickListener(v -> saveProfileChanges());
     }
 
     private void loadUserData() {
@@ -106,68 +103,81 @@ public class UserProfileActivity extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(document -> {
                     if (document.exists()) {
-                        Object profileObj = document.get("profile");
-                        if (profileObj instanceof Map) {
-                            Map<String, Object> profile = (Map<String, Object>) profileObj;
-                            String username = (String) profile.get("username");
-                            String phone = (String) profile.get("phoneNumber");
-                            String city = (String) profile.get("locationID");
-                            String bio = (String) profile.get("bio");
-                            String profileImageUrl = (String) profile.get("profileImageUrl");
-                            long dobMillis = profile.get("dob") instanceof Number ? ((Number) profile.get("dob")).longValue() : 0;
+                        Map<String, Object> profile = (Map<String, Object>) document.get("profile");
+                        if (profile == null) return;
 
-                            tvUsername.setText(username != null ? username : "");
-                            tvCity.setText(city != null ? city : "");
-                            tvPhone.setText(phone != null ? phone : "");
-                            etBio.setText(bio != null ? bio : "");
-                            tvDOB.setText(dobMillis > 0 ? formatDate(dobMillis) : "Not set");
-                            tvAge.setText(dobMillis > 0 ? calculateAge(dobMillis) + " years old" : "");
+                        String username = (String) profile.get("username");
+                        String phone = (String) profile.get("phoneNumber");
+                        String city = (String) profile.get("locationID");
+                        String bio = (String) profile.get("bio");
+                        String profileImageUrl = (String) profile.get("profileImageUrl");
+                        dobMillis = profile.get("dob") instanceof Number ? ((Number) profile.get("dob")).longValue() : 0;
 
-                            if (profileImageUrl != null && !profileImageUrl.isEmpty()) {
-                                Glide.with(this).load(profileImageUrl).into(profileImage);
-                            }
+                        etUsername.setText(username != null ? username : "");
+                        etCity.setText(city != null ? city : "");
+                        etPhone.setText(phone != null ? phone : "");
+                        etBio.setText(bio != null ? bio : "");
+                        etDOB.setText(dobMillis > 0 ? formatDate(dobMillis) : "Not set");
+                        tvAge.setText(dobMillis > 0 ? calculateAge(dobMillis) + " years old" : "");
 
-                            // Disable editing if viewing someone else's profile
-                            if (!viewedUserId.equals(currentUser.getUid())) {
-                                etBio.setEnabled(false);
-                                btnSaveChanges.setVisibility(View.GONE);
-                                profileImage.setClickable(false);
-                            }
+                        if (profileImageUrl != null && !profileImageUrl.isEmpty()) {
+                            Glide.with(this).load(profileImageUrl).into(profileImage);
+                        }
+
+                        if (!viewedUserId.equals(currentUser.getUid())) {
+                            disableEditing();
                         }
                     }
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to load user data", Toast.LENGTH_SHORT).show()
-                );
+                });
     }
 
-    private void saveBioToFirestore() {
-        String updatedBio = etBio.getText().toString().trim();
+    private void disableEditing() {
+        etUsername.setEnabled(false);
+        etBio.setEnabled(false);
+        etCity.setEnabled(false);
+        etPhone.setEnabled(false);
+        etDOB.setEnabled(false);
+        profileImage.setClickable(false);
+        btnSaveChanges.setVisibility(View.GONE);
+    }
+
+    private void showDatePicker() {
+        Calendar calendar = Calendar.getInstance();
+        new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
+            calendar.set(year, month, dayOfMonth);
+            dobMillis = calendar.getTimeInMillis();
+            etDOB.setText(dayOfMonth + "/" + (month + 1) + "/" + year);
+            tvAge.setText(calculateAge(dobMillis) + " years old");
+        }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show();
+    }
+
+    private void saveProfileChanges() {
         if (currentUser == null || !currentUser.getUid().equals(viewedUserId)) return;
+
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("profile.username", etUsername.getText().toString().trim());
+        updates.put("profile.bio", etBio.getText().toString().trim());
+        updates.put("profile.locationID", etCity.getText().toString().trim());
+        updates.put("profile.phoneNumber", etPhone.getText().toString().trim());
+        updates.put("profile.dob", dobMillis);
 
         db.collection("users")
                 .document(currentUser.getUid())
-                .update("profile.bio", updatedBio)
+                .update(updates)
                 .addOnSuccessListener(unused ->
-                        Toast.makeText(this, "Bio updated", Toast.LENGTH_SHORT).show()
-                )
+                        Toast.makeText(this, "Profile updated", Toast.LENGTH_SHORT).show())
                 .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to update bio", Toast.LENGTH_SHORT).show()
-                );
+                        Toast.makeText(this, "Update failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     private void openImagePicker() {
         if (currentUser == null || !currentUser.getUid().equals(viewedUserId)) return;
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        intent.setType("image/*");
         imagePickerLauncher.launch(intent);
     }
 
     private void uploadProfileImage(Uri imageUri) {
-        if (currentUser == null || imageUri == null || !currentUser.getUid().equals(viewedUserId)) {
-            Toast.makeText(this, "Image not selected or unauthorized.", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (currentUser == null || imageUri == null || !currentUser.getUid().equals(viewedUserId)) return;
 
         StorageReference ref = storage.getReference("profile_images/" + currentUser.getUid() + ".jpg");
         ref.putFile(imageUri)
@@ -176,31 +186,22 @@ public class UserProfileActivity extends AppCompatActivity {
                             .document(currentUser.getUid())
                             .update("profile.profileImageUrl", uri.toString())
                             .addOnSuccessListener(unused ->
-                                    Toast.makeText(this, "Profile picture updated", Toast.LENGTH_SHORT).show()
-                            )
-                            .addOnFailureListener(e ->
-                                    Toast.makeText(this, "Failed to update profile picture", Toast.LENGTH_SHORT).show()
-                            );
-                }))
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()
-                );
+                                    Toast.makeText(this, "Profile picture updated", Toast.LENGTH_SHORT).show());
+                }));
     }
 
     private String formatDate(long millis) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(millis);
-        int day = calendar.get(Calendar.DAY_OF_MONTH);
-        int month = calendar.get(Calendar.MONTH) + 1;
-        int year = calendar.get(Calendar.YEAR);
-        return day + "/" + month + "/" + year;
+        return calendar.get(Calendar.DAY_OF_MONTH) + "/" +
+                (calendar.get(Calendar.MONTH) + 1) + "/" +
+                calendar.get(Calendar.YEAR);
     }
 
     private int calculateAge(long dobMillis) {
         Calendar dob = Calendar.getInstance();
         dob.setTimeInMillis(dobMillis);
         Calendar today = Calendar.getInstance();
-
         int age = today.get(Calendar.YEAR) - dob.get(Calendar.YEAR);
         if (today.get(Calendar.DAY_OF_YEAR) < dob.get(Calendar.DAY_OF_YEAR)) {
             age--;
