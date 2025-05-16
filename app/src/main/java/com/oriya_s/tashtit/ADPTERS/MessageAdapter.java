@@ -12,7 +12,10 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.oriya_s.model.Message;
 import com.oriya_s.tashtit.R;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageViewHolder> {
 
@@ -41,6 +44,11 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
     public void onBindViewHolder(@NonNull MessageViewHolder holder, int position) {
         Message msg = messageList.get(position);
         holder.messageText.setText(msg.getText());
+
+        // Format timestamp
+        long timestamp = msg.getTimestamp();
+        String timeFormatted = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(timestamp));
+        holder.messageTime.setText(timeFormatted);
     }
 
     @Override
@@ -49,11 +57,12 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
     }
 
     static class MessageViewHolder extends RecyclerView.ViewHolder {
-        TextView messageText;
+        TextView messageText, messageTime;
 
         public MessageViewHolder(@NonNull View itemView) {
             super(itemView);
             messageText = itemView.findViewById(R.id.message_text);
+            messageTime = itemView.findViewById(R.id.message_time);
         }
     }
 }
