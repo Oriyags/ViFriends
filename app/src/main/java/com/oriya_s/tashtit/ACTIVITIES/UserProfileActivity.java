@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -124,6 +125,13 @@ public class UserProfileActivity extends AppCompatActivity {
 
                             if (profileImageUrl != null && !profileImageUrl.isEmpty()) {
                                 Glide.with(this).load(profileImageUrl).into(profileImage);
+                            }
+
+                            // Disable editing if viewing someone else's profile
+                            if (!viewedUserId.equals(currentUser.getUid())) {
+                                etBio.setEnabled(false);
+                                btnSaveChanges.setVisibility(View.GONE);
+                                profileImage.setClickable(false);
                             }
                         }
                     }
