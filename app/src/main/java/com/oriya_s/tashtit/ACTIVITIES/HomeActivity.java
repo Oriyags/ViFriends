@@ -124,7 +124,9 @@ public class HomeActivity extends AppCompatActivity {
                                 isOwner ||
 
                                         // Show if visibility is 'all'
-                                        "all".equals(event.getVisibility()) ||
+                                        ("all".equals(event.getVisibility()) &&
+                                                event.getVisibleTo() != null &&
+                                                event.getVisibleTo().contains(currentUser.getUid())) ||
 
                                         // Show if visibility is 'selected' and user is allowed
                                         ("selected".equals(event.getVisibility()) &&

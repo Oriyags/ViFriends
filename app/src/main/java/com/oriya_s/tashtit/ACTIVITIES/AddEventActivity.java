@@ -304,6 +304,15 @@ public class AddEventActivity extends AppCompatActivity {
                     }
                     String creatorAvatar = snapshot.getString("profile.avatarUrl");
 
+                    List<String> visibleFriendIds = new ArrayList<>();
+                    if ("all".equals(visibility)) {
+                        for (Friend f : allFriends) {
+                            visibleFriendIds.add(f.getFriendID());
+                        }
+                    } else if ("selected".equals(visibility)) {
+                        visibleFriendIds.addAll(selectedFriendIds);
+                    }
+
                     Map<String, Object> eventMap = new HashMap<>();
                     eventMap.put("name", name);
                     eventMap.put("description", description);
@@ -314,10 +323,7 @@ public class AddEventActivity extends AppCompatActivity {
                     eventMap.put("creatorName", creatorName);
                     eventMap.put("creatorAvatar", creatorAvatar);
                     eventMap.put("creatorId", userId);
-
-                    if ("selected".equals(visibility)) {
-                        eventMap.put("selectedFriends", selectedFriendIds);
-                    }
+                    eventMap.put("visibleTo", visibleFriendIds);
 
                     db.collection("users")
                             .document(userId)
