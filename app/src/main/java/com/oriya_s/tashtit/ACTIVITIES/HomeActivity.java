@@ -25,7 +25,6 @@ import com.oriya_s.tashtit.ADPTERS.EventAdapter;
 import com.oriya_s.tashtit.R;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -120,15 +119,10 @@ public class HomeActivity extends AppCompatActivity {
                         boolean isOwner = event.getCreatorId().equals(currentUser.getUid());
 
                         if (
-                            // Show all events created by the user
                                 isOwner ||
-
-                                        // Show if visibility is 'all'
                                         ("all".equals(event.getVisibility()) &&
                                                 event.getVisibleTo() != null &&
                                                 event.getVisibleTo().contains(currentUser.getUid())) ||
-
-                                        // Show if visibility is 'selected' and user is allowed
                                         ("selected".equals(event.getVisibility()) &&
                                                 event.getVisibleTo() != null &&
                                                 event.getVisibleTo().contains(currentUser.getUid()))
@@ -178,7 +172,6 @@ public class HomeActivity extends AppCompatActivity {
 
             if (event != null) {
                 if (accepted) {
-                    // Add current user to visibleTo list in Firestore
                     firestore.collection("users")
                             .whereEqualTo("profile.username", event.getCreatorName())
                             .get()
@@ -196,7 +189,6 @@ public class HomeActivity extends AppCompatActivity {
                                 }
                             });
                 } else {
-                    // Remove from view (local only – Firebase snapshot listener will sync)
                     eventList.removeIf(e -> e.getId().equals(event.getId()));
                     adapter.notifyDataSetChanged();
                     Toast.makeText(this, "Event declined", Toast.LENGTH_SHORT).show();
@@ -215,10 +207,22 @@ public class HomeActivity extends AppCompatActivity {
                 .delete()
                 .addOnSuccessListener(unused -> {
                     Toast.makeText(this, "Event deleted", Toast.LENGTH_SHORT).show();
-                    eventList.remove(position);
-                    adapter.notifyItemRemoved(position);
+
+                    if (position >= 0 && position < eventList.size()) {
+                        eventList.remove(position);
+                        adapter.notifyItemRemoved(position);
+                    } else {
+                        for (int i = 0; i < eventList.size(); i++) {
+                            if (eventList.get(i).getId().equals(event.getId())) {
+                                eventList.remove(i);
+                                adapter.notifyItemRemoved(i);
+                                break;
+                            }
+                        }
+                    }
                 })
-                .addOnFailureListener(e -> Toast.makeText(this, "Failed to delete", Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to delete", Toast.LENGTH_SHORT).show());
     }
 
     @Override

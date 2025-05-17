@@ -49,6 +49,8 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
 
     @Override
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
+        if (position < 0 || position >= eventList.size()) return;
+
         Event event = eventList.get(position);
 
         holder.eventTitle.setText(event.getName());
@@ -56,7 +58,6 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         holder.eventVisibility.setText("Visible: " + event.getVisibility());
         holder.eventDate.setText(event.getDate());
 
-        // Author name
         if (event.getCreatorName() != null) {
             holder.eventAuthorName.setText(event.getCreatorName());
             holder.eventAuthorName.setVisibility(View.VISIBLE);
@@ -64,7 +65,6 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             holder.eventAuthorName.setVisibility(View.GONE);
         }
 
-        // Author avatar
         holder.eventAuthorImage.setVisibility(View.VISIBLE);
         if (event.getCreatorAvatar() != null && !event.getCreatorAvatar().isEmpty()) {
             Glide.with(context)
@@ -76,7 +76,6 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             holder.eventAuthorImage.setImageResource(R.drawable.ic_default_avatar);
         }
 
-        // Event image
         if (event.getImageUri() != null && !event.getImageUri().isEmpty()) {
             holder.eventImage.setVisibility(View.VISIBLE);
             Glide.with(context).load(event.getImageUri()).into(holder.eventImage);
@@ -84,18 +83,14 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             holder.eventImage.setVisibility(View.GONE);
         }
 
-        // Video label
-        if (event.getVideoUri() != null && !event.getVideoUri().isEmpty()) {
-            holder.eventVideoLabel.setVisibility(View.VISIBLE);
-        } else {
-            holder.eventVideoLabel.setVisibility(View.GONE);
-        }
+        holder.eventVideoLabel.setVisibility(
+                event.getVideoUri() != null && !event.getVideoUri().isEmpty() ? View.VISIBLE : View.GONE
+        );
 
-        // Clean up deleted users from acceptedUserIds
         List<String> acceptedUserIds = event.getAcceptedUserIds();
         if (acceptedUserIds != null && !acceptedUserIds.isEmpty()) {
             Iterator<String> iterator = acceptedUserIds.iterator();
-            final List<String> toRemove = new ArrayList<>();
+            List<String> toRemove = new ArrayList<>();
 
             while (iterator.hasNext()) {
                 String userId = iterator.next();
@@ -105,20 +100,17 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
                     }
 
                     if (userId.equals(acceptedUserIds.get(acceptedUserIds.size() - 1))) {
-                        // When last check completes, update UI
                         acceptedUserIds.removeAll(toRemove);
                         event.setAcceptedUserIds(acceptedUserIds);
 
                         if (!acceptedUserIds.isEmpty()) {
                             holder.eventAttendanceCount.setVisibility(View.VISIBLE);
-                            int count = acceptedUserIds.size();
-                            String text = count == 1 ? "1 friend is going" : count + " friends are going";
+                            String text = acceptedUserIds.size() == 1 ? "1 friend is going" : acceptedUserIds.size() + " friends are going";
                             holder.eventAttendanceCount.setText(text);
                         } else {
                             holder.eventAttendanceCount.setVisibility(View.GONE);
                         }
 
-                        // Update in Firestore as well
                         db.collection("users")
                                 .document(event.getCreatorId())
                                 .collection("events")
@@ -131,7 +123,6 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             holder.eventAttendanceCount.setVisibility(View.GONE);
         }
 
-        // Delete button
         if (currentUser != null && currentUser.getUid().equals(event.getCreatorId())) {
             holder.deleteButton.setVisibility(View.VISIBLE);
             holder.deleteButton.setOnClickListener(v -> {
@@ -143,20 +134,18 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             holder.deleteButton.setVisibility(View.GONE);
         }
 
-        // Click handling
         holder.itemView.setOnClickListener(v -> {
+            Intent intent;
             if (currentUser != null && currentUser.getUid().equals(event.getCreatorId())) {
-                Intent intent = new Intent(context, AttendeesActivity.class);
-                intent.putExtra("event", event);
-                context.startActivity(intent);
+                intent = new Intent(context, AttendeesActivity.class);
             } else {
-                Intent intent = new Intent(context, EventResponseActivity.class);
-                intent.putExtra("event", event);
-                if (context instanceof Activity) {
-                    ((Activity) context).startActivityForResult(intent, 3);
-                } else {
-                    context.startActivity(intent);
-                }
+                intent = new Intent(context, EventResponseActivity.class);
+            }
+            intent.putExtra("event", event);
+            if (context instanceof Activity) {
+                ((Activity) context).startActivityForResult(intent, 3);
+            } else {
+                context.startActivity(intent);
             }
         });
     }
