@@ -17,7 +17,7 @@ import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.oriya_s.model.Event;
-import com.oriya_s.tashtit.ACTIVITIES.AddEventActivity;
+import com.oriya_s.tashtit.ACTIVITIES.AttendeesActivity;
 import com.oriya_s.tashtit.ACTIVITIES.EventResponseActivity;
 import com.oriya_s.tashtit.ACTIVITIES.HomeActivity;
 import com.oriya_s.tashtit.R;
@@ -111,12 +111,12 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         // Click handling
         holder.itemView.setOnClickListener(v -> {
             if (currentUser != null && currentUser.getUid().equals(event.getCreatorId())) {
-                Intent intent = new Intent(context, AddEventActivity.class);
-                intent.putExtra("edit_event", event);
-                if (context instanceof Activity) {
-                    ((Activity) context).startActivityForResult(intent, 2);
-                }
+                // If creator clicks → open AttendeesActivity
+                Intent intent = new Intent(context, AttendeesActivity.class);
+                intent.putExtra("event", event);
+                context.startActivity(intent);
             } else {
+                // If viewer clicks → open response screen
                 Intent intent = new Intent(context, EventResponseActivity.class);
                 intent.putExtra("event", event);
                 if (context instanceof Activity) {
