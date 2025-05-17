@@ -51,6 +51,8 @@ public class AddEventActivity extends AppCompatActivity {
     private List<Friend> allFriends = new ArrayList<>();
     private List<String> selectedFriendIds = new ArrayList<>();
 
+    private String selectedVisibility = null;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -153,7 +155,21 @@ public class AddEventActivity extends AppCompatActivity {
         pickDateButton.setOnClickListener(v -> showDatePicker());
         selectedImage.setOnClickListener(v -> pickImageFromGallery());
         pickVideoButton.setOnClickListener(v -> pickVideoFromGallery());
-        saveButton.setOnClickListener(v -> uploadMediaAndSaveEvent());
+        saveButton.setOnClickListener(v -> {
+            saveButton.setEnabled(false);
+
+            int selectedId = visibilityGroup.getCheckedRadioButtonId();
+            if (selectedId == R.id.visible_all) {
+                selectedVisibility = "all";
+                fetchFriends(this::uploadMediaAndSaveEvent);
+            } else if (selectedId == R.id.visible_selected) {
+                selectedVisibility = "selected";
+                uploadMediaAndSaveEvent();
+            } else {
+                Toast.makeText(this, "Please select visibility", Toast.LENGTH_SHORT).show();
+                saveButton.setEnabled(true);
+            }
+        });
 
         chooseFriendsButton.setOnClickListener(v -> {
             if (allFriends.isEmpty()) {
@@ -229,7 +245,6 @@ public class AddEventActivity extends AppCompatActivity {
     }
 
     private void uploadMediaAndSaveEvent() {
-        saveButton.setEnabled(false);
         if (imageUri != null) {
             uploadImage();
         } else if (videoUri != null) {
@@ -274,29 +289,19 @@ public class AddEventActivity extends AppCompatActivity {
         String description = eventDescriptionInput.getText().toString().trim();
         String date = dateText.getText().toString();
 
-        final String visibility;
-        int selectedId = visibilityGroup.getCheckedRadioButtonId();
-        if (selectedId == R.id.visible_all) {
-            visibility = "all";
-        } else if (selectedId == R.id.visible_selected) {
-            visibility = "selected";
-        } else {
-            Toast.makeText(this, "Please select visibility", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         if (name.isEmpty() || description.isEmpty() || date.equals("No date selected")) {
             Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
+            saveButton.setEnabled(true);
             return;
         }
 
-        String userId = currentUser != null ? currentUser.getUid() : null;
-        if (userId == null) {
+        if (currentUser == null) {
             Toast.makeText(this, "User not authenticated", Toast.LENGTH_SHORT).show();
+            saveButton.setEnabled(true);
             return;
         }
 
-        db.collection("users").document(userId).get()
+        db.collection("users").document(currentUser.getUid()).get()
                 .addOnSuccessListener(snapshot -> {
                     String creatorName = snapshot.getString("profile.username");
                     if (creatorName == null || creatorName.isEmpty()) {
@@ -305,11 +310,11 @@ public class AddEventActivity extends AppCompatActivity {
                     String creatorAvatar = snapshot.getString("profile.avatarUrl");
 
                     List<String> visibleFriendIds = new ArrayList<>();
-                    if ("all".equals(visibility)) {
+                    if ("all".equals(selectedVisibility)) {
                         for (Friend f : allFriends) {
                             visibleFriendIds.add(f.getFriendID());
                         }
-                    } else if ("selected".equals(visibility)) {
+                    } else if ("selected".equals(selectedVisibility)) {
                         visibleFriendIds.addAll(selectedFriendIds);
                     }
 
@@ -317,16 +322,16 @@ public class AddEventActivity extends AppCompatActivity {
                     eventMap.put("name", name);
                     eventMap.put("description", description);
                     eventMap.put("date", date);
-                    eventMap.put("visibility", visibility);
+                    eventMap.put("visibility", selectedVisibility);
                     eventMap.put("imageUri", imageDownloadUrl);
                     eventMap.put("videoUri", videoDownloadUrl);
                     eventMap.put("creatorName", creatorName);
                     eventMap.put("creatorAvatar", creatorAvatar);
-                    eventMap.put("creatorId", userId);
+                    eventMap.put("creatorId", currentUser.getUid());
                     eventMap.put("visibleTo", visibleFriendIds);
 
                     db.collection("users")
-                            .document(userId)
+                            .document(currentUser.getUid())
                             .collection("events")
                             .add(eventMap)
                             .addOnSuccessListener(documentReference -> {
@@ -335,10 +340,12 @@ public class AddEventActivity extends AppCompatActivity {
                             })
                             .addOnFailureListener(e -> {
                                 Toast.makeText(this, "Error saving event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                saveButton.setEnabled(true);
                             });
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Failed to load user profile", Toast.LENGTH_SHORT).show();
+                    saveButton.setEnabled(true);
                 });
     }
 
