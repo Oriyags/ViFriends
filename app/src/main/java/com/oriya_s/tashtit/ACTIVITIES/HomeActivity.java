@@ -25,11 +25,13 @@ import com.oriya_s.tashtit.ADPTERS.EventAdapter;
 import com.oriya_s.tashtit.R;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class HomeActivity extends AppCompatActivity {
 
     private static final int ADD_EVENT_REQUEST = 1;
-    private static final int FRIENDS_REQUEST_CODE = 2; // 👈 Added
+    private static final int FRIENDS_REQUEST_CODE = 2;
+    private static final int EVENT_RESPONSE_REQUEST = 3;
 
     private ImageButton menuButton, eventsButton;
     private Button btnViewFriends;
@@ -53,7 +55,7 @@ public class HomeActivity extends AppCompatActivity {
         initializeViews();
         setListeners();
         loadEventsFromFirebase();
-        loadFriendsCount(); // ✅ Initial load of friends count
+        loadFriendsCount();
     }
 
     private void initializeViews() {
@@ -82,58 +84,58 @@ public class HomeActivity extends AppCompatActivity {
 
     private void setListeners() {
         menuButton.setOnClickListener(v -> drawerLayout.openDrawer(navigationView));
-
-        eventsButton.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeActivity.this, AddEventActivity.class);
-            startActivityForResult(intent, ADD_EVENT_REQUEST);
-        });
-
-        btnViewFriends.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeActivity.this, FriendsListActivity.class);
-            startActivityForResult(intent, FRIENDS_REQUEST_CODE); // ✅ requestCode added
-        });
-
-        navigationView.setNavigationItemSelectedListener(item -> {
-            handleDrawerItemClick(item);
-            return true;
-        });
+        eventsButton.setOnClickListener(v -> startActivityForResult(new Intent(this, AddEventActivity.class), ADD_EVENT_REQUEST));
+        btnViewFriends.setOnClickListener(v -> startActivityForResult(new Intent(this, FriendsListActivity.class), FRIENDS_REQUEST_CODE));
+        navigationView.setNavigationItemSelectedListener(this::handleDrawerItemClick);
     }
 
-    private void handleDrawerItemClick(@NonNull MenuItem item) {
+    private boolean handleDrawerItemClick(@NonNull MenuItem item) {
         int id = item.getItemId();
-
-        if (id == R.id.nav_user) {
-            startActivity(new Intent(HomeActivity.this, UserProfileActivity.class));
-        } else if (id == R.id.nav_settings) {
-            startActivity(new Intent(HomeActivity.this, SettingsActivity.class));
-        } else if (id == R.id.nav_logout) {
+        if (id == R.id.nav_user) startActivity(new Intent(this, UserProfileActivity.class));
+        else if (id == R.id.nav_settings) startActivity(new Intent(this, SettingsActivity.class));
+        else if (id == R.id.nav_logout) {
             FirebaseAuth.getInstance().signOut();
-            Intent intent = new Intent(HomeActivity.this, LogInActivity.class);
+            Intent intent = new Intent(this, LogInActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
             finish();
         }
-
         drawerLayout.closeDrawer(navigationView);
+        return true;
     }
 
     private void loadEventsFromFirebase() {
         if (currentUser == null) return;
 
-        eventListener = firestore.collection("users")
-                .document(currentUser.getUid())
-                .collection("events")
+        eventListener = firestore.collectionGroup("events")
                 .addSnapshotListener((snapshots, e) -> {
                     if (e != null || snapshots == null) return;
-
                     eventList.clear();
+
                     for (DocumentSnapshot doc : snapshots.getDocuments()) {
                         Event event = doc.toObject(Event.class);
-                        if (event != null) {
+                        if (event == null || event.getVisibility() == null || event.getCreatorId() == null)
+                            continue;
+
+                        boolean isOwner = event.getCreatorId().equals(currentUser.getUid());
+
+                        if (
+                            // Show all events created by the user
+                                isOwner ||
+
+                                        // Show if visibility is 'all'
+                                        "all".equals(event.getVisibility()) ||
+
+                                        // Show if visibility is 'selected' and user is allowed
+                                        ("selected".equals(event.getVisibility()) &&
+                                                event.getVisibleTo() != null &&
+                                                event.getVisibleTo().contains(currentUser.getUid()))
+                        ) {
                             event.setId(doc.getId());
                             eventList.add(event);
                         }
                     }
+
                     adapter.notifyDataSetChanged();
                 });
     }
@@ -146,21 +148,17 @@ public class HomeActivity extends AppCompatActivity {
                 .collection("friends")
                 .whereEqualTo("status", "accepted")
                 .get()
-                .addOnSuccessListener(snapshot -> {
-                    int count = snapshot.size();
-                    updateFriendCountText(count);
-                });
+                .addOnSuccessListener(snapshot -> updateFriendCountText(snapshot.size()));
     }
 
     private void updateFriendCountText(int count) {
-        String message = count == 1 ? "You have 1 friend." : "You have " + count + " friends.";
-        friendsSummaryText.setText(message);
+        friendsSummaryText.setText(count == 1 ? "You have 1 friend." : "You have " + count + " friends.");
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        loadFriendsCount(); // ✅ fallback update
+        loadFriendsCount();
     }
 
     @Override
@@ -169,8 +167,38 @@ public class HomeActivity extends AppCompatActivity {
 
         if (requestCode == FRIENDS_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
             int updatedCount = data.getIntExtra("updatedFriendCount", -1);
-            if (updatedCount != -1) {
-                updateFriendCountText(updatedCount); // ✅ update count without refetch
+            if (updatedCount != -1) updateFriendCountText(updatedCount);
+        }
+
+        if (requestCode == EVENT_RESPONSE_REQUEST && data != null) {
+            boolean accepted = data.getBooleanExtra("accepted", false);
+            Event event = (Event) data.getSerializableExtra("event");
+
+            if (event != null) {
+                if (accepted) {
+                    // Add current user to visibleTo list in Firestore
+                    firestore.collection("users")
+                            .whereEqualTo("profile.username", event.getCreatorName())
+                            .get()
+                            .addOnSuccessListener(query -> {
+                                if (!query.isEmpty()) {
+                                    String creatorId = query.getDocuments().get(0).getId();
+                                    firestore.collection("users")
+                                            .document(creatorId)
+                                            .collection("events")
+                                            .document(event.getId())
+                                            .update("visibleTo", com.google.firebase.firestore.FieldValue.arrayUnion(currentUser.getUid()))
+                                            .addOnSuccessListener(unused -> {
+                                                Toast.makeText(this, "Event accepted", Toast.LENGTH_SHORT).show();
+                                            });
+                                }
+                            });
+                } else {
+                    // Remove from view (local only – Firebase snapshot listener will sync)
+                    eventList.removeIf(e -> e.getId().equals(event.getId()));
+                    adapter.notifyDataSetChanged();
+                    Toast.makeText(this, "Event declined", Toast.LENGTH_SHORT).show();
+                }
             }
         }
     }
@@ -188,15 +216,12 @@ public class HomeActivity extends AppCompatActivity {
                     eventList.remove(position);
                     adapter.notifyItemRemoved(position);
                 })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to delete", Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> Toast.makeText(this, "Failed to delete", Toast.LENGTH_SHORT).show());
     }
 
     @Override
     protected void onDestroy() {
-        if (eventListener != null) {
-            eventListener.remove();
-        }
+        if (eventListener != null) eventListener.remove();
         super.onDestroy();
     }
 }

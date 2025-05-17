@@ -1,5 +1,6 @@
 package com.oriya_s.tashtit.ACTIVITIES;
 
+import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -16,14 +17,15 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.oriya_s.model.Friend;
 import com.oriya_s.tashtit.R;
 
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class AddEventActivity extends AppCompatActivity {
 
@@ -41,9 +43,13 @@ public class AddEventActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private FirebaseAuth auth;
     private FirebaseStorage storage;
+    private FirebaseUser currentUser;
 
     private ActivityResultLauncher<Intent> imagePickerLauncher;
     private ActivityResultLauncher<Intent> videoPickerLauncher;
+
+    private List<Friend> allFriends = new ArrayList<>();
+    private List<String> selectedFriendIds = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,6 +59,7 @@ public class AddEventActivity extends AppCompatActivity {
         auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
+        currentUser = auth.getCurrentUser();
 
         eventNameInput = findViewById(R.id.event_name);
         eventDescriptionInput = findViewById(R.id.event_description);
@@ -65,8 +72,28 @@ public class AddEventActivity extends AppCompatActivity {
         pickVideoButton = findViewById(R.id.pick_video_button);
         selectedVideoThumb = findViewById(R.id.selected_video_thumb);
 
+        chooseFriendsButton.setEnabled(false);
+
         initializePickers();
         setListeners();
+        fetchFriends();
+    }
+
+    private void fetchFriends() {
+        if (currentUser == null) return;
+
+        db.collection("users")
+                .document(currentUser.getUid())
+                .collection("friends")
+                .whereEqualTo("status", "accepted")
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    allFriends.clear();
+                    for (QueryDocumentSnapshot doc : snapshot) {
+                        Friend f = doc.toObject(Friend.class);
+                        allFriends.add(f);
+                    }
+                });
     }
 
     private void initializePickers() {
@@ -103,6 +130,18 @@ public class AddEventActivity extends AppCompatActivity {
         selectedImage.setOnClickListener(v -> pickImageFromGallery());
         pickVideoButton.setOnClickListener(v -> pickVideoFromGallery());
         saveButton.setOnClickListener(v -> uploadMediaAndSaveEvent());
+
+        chooseFriendsButton.setOnClickListener(v -> showFriendSelectionDialog());
+
+        visibilityGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.visible_selected) {
+                chooseFriendsButton.setEnabled(true);
+                showFriendSelectionDialog();
+            } else {
+                chooseFriendsButton.setEnabled(false);
+                selectedFriendIds.clear();
+            }
+        });
     }
 
     private void showDatePicker() {
@@ -111,6 +150,31 @@ public class AddEventActivity extends AppCompatActivity {
             String selectedDate = dayOfMonth + "/" + (month + 1) + "/" + year;
             dateText.setText(selectedDate);
         }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show();
+    }
+
+    private void showFriendSelectionDialog() {
+        String[] names = new String[allFriends.size()];
+        boolean[] checkedItems = new boolean[allFriends.size()];
+
+        for (int i = 0; i < allFriends.size(); i++) {
+            names[i] = allFriends.get(i).getName();
+            checkedItems[i] = selectedFriendIds.contains(allFriends.get(i).getFriendID());
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Select Friends")
+                .setMultiChoiceItems(names, checkedItems, (dialog, indexSelected, isChecked) -> {
+                    String friendId = allFriends.get(indexSelected).getFriendID();
+                    if (isChecked) {
+                        if (!selectedFriendIds.contains(friendId)) {
+                            selectedFriendIds.add(friendId);
+                        }
+                    } else {
+                        selectedFriendIds.remove(friendId);
+                    }
+                })
+                .setPositiveButton("OK", null)
+                .show();
     }
 
     private void pickImageFromGallery() {
@@ -170,48 +234,65 @@ public class AddEventActivity extends AppCompatActivity {
         String name = eventNameInput.getText().toString().trim();
         String description = eventDescriptionInput.getText().toString().trim();
         String date = dateText.getText().toString();
-        String visibility = "";
 
+        final String visibility;
         int selectedId = visibilityGroup.getCheckedRadioButtonId();
         if (selectedId == R.id.visible_all) {
             visibility = "all";
         } else if (selectedId == R.id.visible_selected) {
             visibility = "selected";
+        } else {
+            Toast.makeText(this, "Please select visibility", Toast.LENGTH_SHORT).show();
+            return;
         }
 
         if (name.isEmpty() || description.isEmpty() || date.equals("No date selected")) {
             Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
-            saveButton.setEnabled(true);
             return;
         }
 
-        String userId = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : null;
+        String userId = currentUser != null ? currentUser.getUid() : null;
         if (userId == null) {
             Toast.makeText(this, "User not authenticated", Toast.LENGTH_SHORT).show();
-            saveButton.setEnabled(true);
             return;
         }
 
-        Map<String, Object> eventMap = new HashMap<>();
-        eventMap.put("name", name);
-        eventMap.put("description", description);
-        eventMap.put("date", date);
-        eventMap.put("visibility", visibility);
-        eventMap.put("imageUri", imageDownloadUrl);
-        eventMap.put("videoUri", videoDownloadUrl);
+        db.collection("users").document(userId).get()
+                .addOnSuccessListener(snapshot -> {
+                    String creatorName = snapshot.getString("profile.username");
+                    String creatorAvatar = snapshot.getString("profile.avatarUrl");
 
-        db.collection("users")
-                .document(userId)
-                .collection("events")
-                .add(eventMap)
-                .addOnSuccessListener(documentReference -> {
-                    Toast.makeText(this, "Event saved successfully!", Toast.LENGTH_SHORT).show();
-                    finish();
+                    Map<String, Object> eventMap = new HashMap<>();
+                    eventMap.put("name", name);
+                    eventMap.put("description", description);
+                    eventMap.put("date", date);
+                    eventMap.put("visibility", visibility);
+                    eventMap.put("imageUri", imageDownloadUrl);
+                    eventMap.put("videoUri", videoDownloadUrl);
+                    eventMap.put("creatorName", creatorName);
+                    eventMap.put("creatorAvatar", creatorAvatar);
+                    eventMap.put("creatorId", userId);
+
+
+                    if ("selected".equals(visibility)) {
+                        eventMap.put("selectedFriends", selectedFriendIds);
+                    }
+
+                    db.collection("users")
+                            .document(userId)
+                            .collection("events")
+                            .add(eventMap)
+                            .addOnSuccessListener(documentReference -> {
+                                Toast.makeText(this, "Event saved successfully!", Toast.LENGTH_SHORT).show();
+                                finish();
+                            })
+                            .addOnFailureListener(e -> {
+                                Toast.makeText(this, "Error saving event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            });
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Error saving event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                })
-                .addOnCompleteListener(task -> saveButton.setEnabled(true));
+                    Toast.makeText(this, "Failed to load user profile", Toast.LENGTH_SHORT).show();
+                });
     }
 
     @Override

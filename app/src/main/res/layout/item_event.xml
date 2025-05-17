@@ -7,6 +7,36 @@
     android:background="#EEEEEE"
     android:layout_marginBottom="8dp">
 
+    <!-- Author Row (Avatar + Name) at the top -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+
+        <ImageView
+            android:id="@+id/event_author_image"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="12dp"
+            android:src="@drawable/ic_default_avatar"
+            android:scaleType="centerCrop"
+            android:background="@drawable/circle_background"
+            android:visibility="visible" />
+
+        <TextView
+            android:id="@+id/event_author_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="User Name"
+            android:textSize="16sp"
+            android:textColor="#333333"
+            android:textStyle="bold"
+            android:visibility="visible" />
+    </LinearLayout>
+
+    <!-- Title -->
     <TextView
         android:id="@+id/event_title"
         android:layout_width="match_parent"
@@ -15,25 +45,28 @@
         android:textStyle="bold"
         android:textSize="18sp" />
 
+    <!-- Description -->
     <TextView
         android:id="@+id/event_description"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Description" />
 
+    <!-- Date -->
     <TextView
         android:id="@+id/event_date"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Date" />
 
+    <!-- Visibility -->
     <TextView
         android:id="@+id/event_visibility"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Visibility" />
 
-    <!-- Optional image preview -->
+    <!-- Image Preview -->
     <ImageView
         android:id="@+id/event_image_preview"
         android:layout_width="match_parent"
@@ -43,7 +76,7 @@
         android:visibility="gone"
         android:background="#CCCCCC" />
 
-    <!-- Optional video label (or preview if needed later) -->
+    <!-- Video Label -->
     <TextView
         android:id="@+id/event_video_label"
         android:layout_width="wrap_content"
@@ -54,7 +87,7 @@
         android:textStyle="italic"
         android:paddingTop="4dp" />
 
-    <!-- Delete button -->
+    <!-- Delete Button -->
     <ImageButton
         android:id="@+id/event_delete_button"
         android:layout_width="wrap_content"

@@ -1,36 +1,26 @@
 package com.oriya_s.model;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Objects;
 
 public class Event implements Serializable {
-
-    private String id; // 🆕 מזהה Firebase
+    private String id;
     private String name;
     private String description;
     private String date;
     private String visibility;
     private String imageUri;
     private String videoUri;
+    private List<String> visibleTo;
+    private String creatorName;
+    private String creatorAvatar;
+    private String creatorId;
 
     public Event() {}
 
-    public Event(String name, String description, String date, String visibility, String imageUri) {
-        this.name = name;
-        this.description = description;
-        this.date = date;
-        this.visibility = visibility;
-        this.imageUri = imageUri;
-    }
-
-    // 🆕 Getter & Setter for ID
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
@@ -50,6 +40,18 @@ public class Event implements Serializable {
     public String getVideoUri() { return videoUri; }
     public void setVideoUri(String videoUri) { this.videoUri = videoUri; }
 
+    public List<String> getVisibleTo() { return visibleTo; }
+    public void setVisibleTo(List<String> visibleTo) { this.visibleTo = visibleTo; }
+
+    public String getCreatorName() { return creatorName; }
+    public void setCreatorName(String creatorName) { this.creatorName = creatorName; }
+
+    public String getCreatorAvatar() { return creatorAvatar; }
+    public void setCreatorAvatar(String creatorAvatar) { this.creatorAvatar = creatorAvatar; }
+
+    public String getCreatorId() { return creatorId; }
+    public void setCreatorId(String creatorId) { this.creatorId = creatorId; }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -61,6 +63,9 @@ public class Event implements Serializable {
                 Objects.equals(date, event.date) &&
                 Objects.equals(visibility, event.visibility) &&
                 Objects.equals(imageUri, event.imageUri) &&
-                Objects.equals(videoUri, event.videoUri);
+                Objects.equals(videoUri, event.videoUri) &&
+                Objects.equals(creatorName, event.creatorName) &&
+                Objects.equals(creatorAvatar, event.creatorAvatar) &&
+                Objects.equals(creatorId, event.creatorId);
     }
 }
