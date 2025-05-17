@@ -66,6 +66,17 @@
         android:layout_height="wrap_content"
         android:text="Visibility" />
 
+    <!-- Attendee Count -->
+    <TextView
+        android:id="@+id/event_attendance_count"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="0 friends are going"
+        android:textColor="#333333"
+        android:textStyle="italic"
+        android:paddingTop="4dp"
+        android:visibility="gone"/>
+
     <!-- Image Preview -->
     <ImageView
         android:id="@+id/event_image_preview"

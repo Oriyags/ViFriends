@@ -13,6 +13,7 @@ public class Event implements Serializable {
     private String imageUri;
     private String videoUri;
     private List<String> visibleTo;
+    private List<String> acceptedUserIds;
     private String creatorName;
     private String creatorAvatar;
     private String creatorId;
@@ -43,6 +44,9 @@ public class Event implements Serializable {
     public List<String> getVisibleTo() { return visibleTo; }
     public void setVisibleTo(List<String> visibleTo) { this.visibleTo = visibleTo; }
 
+    public List<String> getAcceptedUserIds() { return acceptedUserIds; }
+    public void setAcceptedUserIds(List<String> acceptedUserIds) { this.acceptedUserIds = acceptedUserIds; }
+
     public String getCreatorName() { return creatorName; }
     public void setCreatorName(String creatorName) { this.creatorName = creatorName; }
 
@@ -57,15 +61,6 @@ public class Event implements Serializable {
         if (this == o) return true;
         if (!(o instanceof Event)) return false;
         Event event = (Event) o;
-        return Objects.equals(id, event.id) &&
-                Objects.equals(name, event.name) &&
-                Objects.equals(description, event.description) &&
-                Objects.equals(date, event.date) &&
-                Objects.equals(visibility, event.visibility) &&
-                Objects.equals(imageUri, event.imageUri) &&
-                Objects.equals(videoUri, event.videoUri) &&
-                Objects.equals(creatorName, event.creatorName) &&
-                Objects.equals(creatorAvatar, event.creatorAvatar) &&
-                Objects.equals(creatorId, event.creatorId);
+        return Objects.equals(id, event.id);
     }
 }

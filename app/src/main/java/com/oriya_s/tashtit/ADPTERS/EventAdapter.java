@@ -86,7 +86,17 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             holder.eventVideoLabel.setVisibility(View.GONE);
         }
 
-        // Delete event (only if it's the user's own)
+        // Attendance count
+        if (event.getAcceptedUserIds() != null && !event.getAcceptedUserIds().isEmpty()) {
+            holder.eventAttendanceCount.setVisibility(View.VISIBLE);
+            int count = event.getAcceptedUserIds().size();
+            String text = count == 1 ? "1 friend is going" : count + " friends are going";
+            holder.eventAttendanceCount.setText(text);
+        } else {
+            holder.eventAttendanceCount.setVisibility(View.GONE);
+        }
+
+        // Delete button (only for creator)
         if (currentUser != null && currentUser.getUid().equals(event.getCreatorId())) {
             holder.deleteButton.setVisibility(View.VISIBLE);
             holder.deleteButton.setOnClickListener(v -> {
@@ -98,21 +108,19 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             holder.deleteButton.setVisibility(View.GONE);
         }
 
-        // Click: open edit or response activity
+        // Click handling
         holder.itemView.setOnClickListener(v -> {
             if (currentUser != null && currentUser.getUid().equals(event.getCreatorId())) {
-                // Creator → Edit
                 Intent intent = new Intent(context, AddEventActivity.class);
                 intent.putExtra("edit_event", event);
                 if (context instanceof Activity) {
                     ((Activity) context).startActivityForResult(intent, 2);
                 }
             } else {
-                // Viewer → Response
                 Intent intent = new Intent(context, EventResponseActivity.class);
                 intent.putExtra("event", event);
                 if (context instanceof Activity) {
-                    ((Activity) context).startActivityForResult(intent, 3); // ensure RESULT_OK is returned
+                    ((Activity) context).startActivityForResult(intent, 3);
                 } else {
                     context.startActivity(intent);
                 }
@@ -126,7 +134,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     }
 
     public static class EventViewHolder extends RecyclerView.ViewHolder {
-        TextView eventTitle, eventDescription, eventVisibility, eventDate, eventVideoLabel, eventAuthorName;
+        TextView eventTitle, eventDescription, eventVisibility, eventDate, eventVideoLabel, eventAuthorName, eventAttendanceCount;
         ImageView eventImage, eventAuthorImage;
         ImageButton deleteButton;
 
@@ -136,10 +144,11 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             eventDescription = itemView.findViewById(R.id.event_description);
             eventVisibility = itemView.findViewById(R.id.event_visibility);
             eventDate = itemView.findViewById(R.id.event_date);
-            eventImage = itemView.findViewById(R.id.event_image_preview);
             eventVideoLabel = itemView.findViewById(R.id.event_video_label);
+            eventAttendanceCount = itemView.findViewById(R.id.event_attendance_count);
             eventAuthorName = itemView.findViewById(R.id.event_author_name);
             eventAuthorImage = itemView.findViewById(R.id.event_author_image);
+            eventImage = itemView.findViewById(R.id.event_image_preview);
             deleteButton = itemView.findViewById(R.id.event_delete_button);
         }
     }

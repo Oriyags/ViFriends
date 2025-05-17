@@ -21,6 +21,8 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.oriya_s.model.Event;
 import com.oriya_s.tashtit.R;
 
+import java.util.ArrayList;
+
 public class EventResponseActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;
@@ -88,12 +90,34 @@ public class EventResponseActivity extends AppCompatActivity {
 
     private void setButtonListeners() {
         btnAccept.setOnClickListener(v -> {
-            Intent resultIntent = new Intent();
-            resultIntent.putExtra("accepted", true);
-            resultIntent.putExtra("event", event);
-            setResult(RESULT_OK, resultIntent);
-            finish();
+            if (currentUserId == null) return;
+
+            FirebaseFirestore.getInstance()
+                    .collection("users")
+                    .document(event.getCreatorId())
+                    .collection("events")
+                    .document(event.getId())
+                    .update("acceptedUserIds", com.google.firebase.firestore.FieldValue.arrayUnion(currentUserId))
+                    .addOnSuccessListener(unused -> {
+                        // Also update the local event object for returning to HomeActivity
+                        if (event.getAcceptedUserIds() == null) {
+                            event.setAcceptedUserIds(new ArrayList<>());
+                        }
+                        if (!event.getAcceptedUserIds().contains(currentUserId)) {
+                            event.getAcceptedUserIds().add(currentUserId);
+                        }
+
+                        Intent resultIntent = new Intent();
+                        resultIntent.putExtra("accepted", true);
+                        resultIntent.putExtra("event", event);
+                        setResult(RESULT_OK, resultIntent);
+                        finish();
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Error saving response", Toast.LENGTH_SHORT).show();
+                    });
         });
+
 
         btnDecline.setOnClickListener(v -> {
             Intent resultIntent = new Intent();
