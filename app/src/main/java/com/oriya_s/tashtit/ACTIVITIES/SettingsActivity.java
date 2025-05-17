@@ -16,6 +16,7 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.storage.FirebaseStorage;
@@ -91,11 +92,14 @@ public class SettingsActivity extends AppCompatActivity {
 
         String uid = currentUser.getUid();
 
-        // Delete profile image
+        // ✅ Remove user from all acceptedUserIds in events
+        removeUserFromAllEvents(uid);
+
+        // ✅ Remove profile image
         StorageReference profileRef = storage.getReference("profile_images/" + uid + ".jpg");
         profileRef.delete(); // Ignore errors if not found
 
-        // Remove from other users' friends lists
+        // ✅ Remove from other users' friends lists
         db.collectionGroup("friends")
                 .whereEqualTo("friendID", uid)
                 .get()
@@ -105,7 +109,7 @@ public class SettingsActivity extends AppCompatActivity {
                     }
                 });
 
-        // Delete from other users' chat metadata + delete chat documents and messages
+        // ✅ Delete from other users' chat metadata + delete chats and messages
         db.collection("Chats")
                 .whereArrayContains("participants", uid)
                 .get()
@@ -114,7 +118,6 @@ public class SettingsActivity extends AppCompatActivity {
                         String chatId = chatDoc.getId();
                         List<?> participants = (List<?>) chatDoc.get("participants");
 
-                        // Delete messages in chat
                         db.collection("Chats").document(chatId)
                                 .collection("messages")
                                 .get()
@@ -124,10 +127,8 @@ public class SettingsActivity extends AppCompatActivity {
                                     }
                                 });
 
-                        // Delete chat document
                         db.collection("Chats").document(chatId).delete();
 
-                        // Remove from users' chat metadata
                         for (Object userIdObj : participants) {
                             String participantId = userIdObj.toString();
                             if (!participantId.equals(uid)) {
@@ -141,12 +142,12 @@ public class SettingsActivity extends AppCompatActivity {
                     }
                 });
 
-        // Delete user’s own subcollections
+        // ✅ Delete user’s subcollections
         deleteSubcollection("users", uid, "chats");
         deleteSubcollection("users", uid, "friends");
         deleteSubcollection("users", uid, "events");
 
-        // Delete user document and Auth account
+        // ✅ Delete user document and Firebase Auth account
         db.collection("users").document(uid).delete()
                 .addOnSuccessListener(aVoid -> {
                     currentUser.delete()
@@ -176,5 +177,20 @@ public class SettingsActivity extends AppCompatActivity {
         intent.putExtra(Intent.EXTRA_SUBJECT, "Join ViFriends!");
         intent.putExtra(Intent.EXTRA_TEXT, "Hey! Check out ViFriends - the app that lets us stay in touch and share moments. Download it now!");
         startActivity(Intent.createChooser(intent, "Invite via"));
+    }
+
+    // ✅ NEW METHOD: Remove user from acceptedUserIds in all events
+    private void removeUserFromAllEvents(String userIdToRemove) {
+        db.collectionGroup("events")
+                .get()
+                .addOnSuccessListener(snapshots -> {
+                    for (DocumentSnapshot doc : snapshots.getDocuments()) {
+                        List<String> accepted = (List<String>) doc.get("acceptedUserIds");
+                        if (accepted != null && accepted.contains(userIdToRemove)) {
+                            accepted.remove(userIdToRemove);
+                            doc.getReference().update("acceptedUserIds", accepted);
+                        }
+                    }
+                });
     }
 }
