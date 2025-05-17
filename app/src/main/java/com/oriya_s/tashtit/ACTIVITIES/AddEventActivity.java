@@ -76,10 +76,9 @@ public class AddEventActivity extends AppCompatActivity {
 
         initializePickers();
         setListeners();
-        fetchFriends();
     }
 
-    private void fetchFriends() {
+    private void fetchFriends(Runnable onComplete) {
         if (currentUser == null) return;
 
         db.collection("users")
@@ -89,9 +88,34 @@ public class AddEventActivity extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(snapshot -> {
                     allFriends.clear();
+                    List<Friend> tempFriends = new ArrayList<>();
+
                     for (QueryDocumentSnapshot doc : snapshot) {
                         Friend f = doc.toObject(Friend.class);
-                        allFriends.add(f);
+                        tempFriends.add(f);
+                    }
+
+                    if (tempFriends.isEmpty()) {
+                        if (onComplete != null) onComplete.run();
+                        return;
+                    }
+
+                    for (Friend f : tempFriends) {
+                        db.collection("users").document(f.getFriendID())
+                                .get()
+                                .addOnSuccessListener(profileDoc -> {
+                                    if (profileDoc.exists() && profileDoc.contains("profile")) {
+                                        Map<String, Object> profile = (Map<String, Object>) profileDoc.get("profile");
+                                        if (profile != null) {
+                                            f.setName((String) profile.get("username"));
+                                            f.setAvatarUrl((String) profile.get("avatarUrl"));
+                                        }
+                                    }
+                                    allFriends.add(f);
+                                    if (allFriends.size() == tempFriends.size() && onComplete != null) {
+                                        onComplete.run();
+                                    }
+                                });
                     }
                 });
     }
@@ -131,12 +155,22 @@ public class AddEventActivity extends AppCompatActivity {
         pickVideoButton.setOnClickListener(v -> pickVideoFromGallery());
         saveButton.setOnClickListener(v -> uploadMediaAndSaveEvent());
 
-        chooseFriendsButton.setOnClickListener(v -> showFriendSelectionDialog());
+        chooseFriendsButton.setOnClickListener(v -> {
+            if (allFriends.isEmpty()) {
+                fetchFriends(this::showFriendSelectionDialog);
+            } else {
+                showFriendSelectionDialog();
+            }
+        });
 
         visibilityGroup.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == R.id.visible_selected) {
                 chooseFriendsButton.setEnabled(true);
-                showFriendSelectionDialog();
+                if (allFriends.isEmpty()) {
+                    fetchFriends(this::showFriendSelectionDialog);
+                } else {
+                    showFriendSelectionDialog();
+                }
             } else {
                 chooseFriendsButton.setEnabled(false);
                 selectedFriendIds.clear();
@@ -153,6 +187,11 @@ public class AddEventActivity extends AppCompatActivity {
     }
 
     private void showFriendSelectionDialog() {
+        if (allFriends.isEmpty()) {
+            Toast.makeText(this, "No friends to show", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         String[] names = new String[allFriends.size()];
         boolean[] checkedItems = new boolean[allFriends.size()];
 
@@ -260,6 +299,9 @@ public class AddEventActivity extends AppCompatActivity {
         db.collection("users").document(userId).get()
                 .addOnSuccessListener(snapshot -> {
                     String creatorName = snapshot.getString("profile.username");
+                    if (creatorName == null || creatorName.isEmpty()) {
+                        creatorName = currentUser.getEmail();
+                    }
                     String creatorAvatar = snapshot.getString("profile.avatarUrl");
 
                     Map<String, Object> eventMap = new HashMap<>();
@@ -272,7 +314,6 @@ public class AddEventActivity extends AppCompatActivity {
                     eventMap.put("creatorName", creatorName);
                     eventMap.put("creatorAvatar", creatorAvatar);
                     eventMap.put("creatorId", userId);
-
 
                     if ("selected".equals(visibility)) {
                         eventMap.put("selectedFriends", selectedFriendIds);

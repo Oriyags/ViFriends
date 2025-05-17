@@ -11,8 +11,7 @@ public class Friend extends BaseEntity implements Serializable {
     private String avatarUrl;
     private String status; // "pending" or "accepted"
 
-    public Friend() {
-    }
+    public Friend() {}
 
     public Friend(String friendID, String name, String avatarUrl, String userID, String status) {
         this.FriendID = friendID;
@@ -39,7 +38,7 @@ public class Friend extends BaseEntity implements Serializable {
     }
 
     public String getName() {
-        return name;
+        return name != null ? name : ""; // Ensure non-null for dialog display
     }
 
     public void setName(String name) {
