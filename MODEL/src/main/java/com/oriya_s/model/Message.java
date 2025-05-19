@@ -1,5 +1,7 @@
 package com.oriya_s.model;
 
+import java.util.Objects;
+
 public class Message {
     private String senderID;
     private String text;
@@ -17,23 +19,19 @@ public class Message {
         return senderID;
     }
 
-    public void setSenderID(String senderID) {
-        this.senderID = senderID;
-    }
-
     public String getText() {
         return text;
-    }
-
-    public void setText(String text) {
-        this.text = text;
     }
 
     public long getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(long timestamp) {
-        this.timestamp = timestamp;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Message)) return false;
+        Message message = (Message) o;
+        return timestamp == message.timestamp && Objects.equals(senderID, message.senderID) && Objects.equals(text, message.text);
     }
 }

@@ -92,14 +92,14 @@ public class SettingsActivity extends AppCompatActivity {
 
         String uid = currentUser.getUid();
 
-        // ✅ Remove user from all acceptedUserIds in events
+        // Remove user from all acceptedUserIds in events
         removeUserFromAllEvents(uid);
 
-        // ✅ Remove profile image
+        // Remove profile image
         StorageReference profileRef = storage.getReference("profile_images/" + uid + ".jpg");
         profileRef.delete(); // Ignore errors if not found
 
-        // ✅ Remove from other users' friends lists
+        // Remove from other users' friends lists
         db.collectionGroup("friends")
                 .whereEqualTo("friendID", uid)
                 .get()
@@ -109,7 +109,7 @@ public class SettingsActivity extends AppCompatActivity {
                     }
                 });
 
-        // ✅ Delete from other users' chat metadata + delete chats and messages
+        // Delete from other users' chat metadata + delete chats and messages
         db.collection("Chats")
                 .whereArrayContains("participants", uid)
                 .get()
@@ -142,12 +142,12 @@ public class SettingsActivity extends AppCompatActivity {
                     }
                 });
 
-        // ✅ Delete user’s subcollections
+        // Delete user’s subcollections
         deleteSubcollection("users", uid, "chats");
         deleteSubcollection("users", uid, "friends");
         deleteSubcollection("users", uid, "events");
 
-        // ✅ Delete user document and Firebase Auth account
+        // Delete user document and Firebase Auth account
         db.collection("users").document(uid).delete()
                 .addOnSuccessListener(aVoid -> {
                     currentUser.delete()
@@ -179,7 +179,7 @@ public class SettingsActivity extends AppCompatActivity {
         startActivity(Intent.createChooser(intent, "Invite via"));
     }
 
-    // ✅ NEW METHOD: Remove user from acceptedUserIds in all events
+    // NEW METHOD: Remove user from acceptedUserIds in all events
     private void removeUserFromAllEvents(String userIdToRemove) {
         db.collectionGroup("events")
                 .get()
