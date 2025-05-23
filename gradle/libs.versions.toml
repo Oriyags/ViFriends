@@ -13,6 +13,7 @@ firebaseFirestore = "25.0.0"
 playServicesTasks = "18.2.0"
 securityCrypto = "1.0.0"
 firebaseAuth = "22.3.1"
+places = "2.7.0"
 
 [libraries]
 firebase-database = { module = "com.google.firebase:firebase-database", version.ref = "firebaseDatabase" }
@@ -28,9 +29,9 @@ firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore
 play-services-tasks = { module = "com.google.android.gms:play-services-tasks", version.ref = "playServicesTasks" }
 security-crypto = { module = "androidx.security:security-crypto", version.ref = "securityCrypto" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth", version.ref = "firebaseAuth" }
+places = { module = "com.google.android.libraries.places:places", version.ref = "places" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 google-gms-google-services = { id = "com.google.gms.google-services", version.ref = "googleGmsGoogleServices" }
-

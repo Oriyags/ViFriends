@@ -120,14 +120,17 @@ public class HomeActivity extends AppCompatActivity {
 
                         if (
                                 isOwner ||
-                                        ("all".equals(event.getVisibility()) &&
-                                                event.getVisibleTo() != null &&
-                                                event.getVisibleTo().contains(currentUser.getUid())) ||
+                                        "all".equals(event.getVisibility()) ||
                                         ("selected".equals(event.getVisibility()) &&
                                                 event.getVisibleTo() != null &&
                                                 event.getVisibleTo().contains(currentUser.getUid()))
                         ) {
                             event.setId(doc.getId());
+
+                            if (doc.contains("latitude")) event.setLatitude(doc.getDouble("latitude"));
+                            if (doc.contains("longitude")) event.setLongitude(doc.getDouble("longitude"));
+                            if (doc.contains("address")) event.setAddress(doc.getString("address"));
+
                             eventList.add(event);
                         }
                     }

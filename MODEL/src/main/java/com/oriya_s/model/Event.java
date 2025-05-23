@@ -18,44 +18,143 @@ public class Event implements Serializable {
     private String creatorAvatar;
     private String creatorId;
 
-    public Event() {}
+    private double latitude;
+    private double longitude;
+    private String address;
 
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    public Event() {
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    // ID
+    public String getId() {
+        return id;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public void setId(String id) {
+        this.id = id;
+    }
 
-    public String getDate() { return date; }
-    public void setDate(String date) { this.date = date; }
+    // Name
+    public String getName() {
+        return name;
+    }
 
-    public String getVisibility() { return visibility; }
-    public void setVisibility(String visibility) { this.visibility = visibility; }
+    public void setName(String name) {
+        this.name = name;
+    }
 
-    public String getImageUri() { return imageUri; }
-    public void setImageUri(String imageUri) { this.imageUri = imageUri; }
+    // Description
+    public String getDescription() {
+        return description;
+    }
 
-    public String getVideoUri() { return videoUri; }
-    public void setVideoUri(String videoUri) { this.videoUri = videoUri; }
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-    public List<String> getVisibleTo() { return visibleTo; }
-    public void setVisibleTo(List<String> visibleTo) { this.visibleTo = visibleTo; }
+    // Date
+    public String getDate() {
+        return date;
+    }
 
-    public List<String> getAcceptedUserIds() { return acceptedUserIds; }
-    public void setAcceptedUserIds(List<String> acceptedUserIds) { this.acceptedUserIds = acceptedUserIds; }
+    public void setDate(String date) {
+        this.date = date;
+    }
 
-    public String getCreatorName() { return creatorName; }
-    public void setCreatorName(String creatorName) { this.creatorName = creatorName; }
+    // Visibility
+    public String getVisibility() {
+        return visibility;
+    }
 
-    public String getCreatorAvatar() { return creatorAvatar; }
-    public void setCreatorAvatar(String creatorAvatar) { this.creatorAvatar = creatorAvatar; }
+    public void setVisibility(String visibility) {
+        this.visibility = visibility;
+    }
 
-    public String getCreatorId() { return creatorId; }
-    public void setCreatorId(String creatorId) { this.creatorId = creatorId; }
+    // Media
+    public String getImageUri() {
+        return imageUri;
+    }
 
+    public void setImageUri(String imageUri) {
+        this.imageUri = imageUri;
+    }
+
+    public String getVideoUri() {
+        return videoUri;
+    }
+
+    public void setVideoUri(String videoUri) {
+        this.videoUri = videoUri;
+    }
+
+    // Friends
+    public List<String> getVisibleTo() {
+        return visibleTo;
+    }
+
+    public void setVisibleTo(List<String> visibleTo) {
+        this.visibleTo = visibleTo;
+    }
+
+    public List<String> getAcceptedUserIds() {
+        return acceptedUserIds;
+    }
+
+    public void setAcceptedUserIds(List<String> acceptedUserIds) {
+        this.acceptedUserIds = acceptedUserIds;
+    }
+
+    // Creator Info
+    public String getCreatorName() {
+        return creatorName;
+    }
+
+    public void setCreatorName(String creatorName) {
+        this.creatorName = creatorName;
+    }
+
+    public String getCreatorAvatar() {
+        return creatorAvatar;
+    }
+
+    public void setCreatorAvatar(String creatorAvatar) {
+        this.creatorAvatar = creatorAvatar;
+    }
+
+    public String getCreatorId() {
+        return creatorId;
+    }
+
+    public void setCreatorId(String creatorId) {
+        this.creatorId = creatorId;
+    }
+
+    // Location
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    // Equality (based on ID)
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

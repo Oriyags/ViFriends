@@ -50,12 +50,19 @@ dependencies {
     implementation("com.github.bumptech.glide:glide:4.15.1")
     annotationProcessor("com.github.bumptech.glide:compiler:4.15.1")
 
+    // ✅ UI components
     implementation("de.hdodenhof:circleimageview:3.1.0")
+
+    // ✅ Google Maps & Places (only the full SDK, v2.7.0)
     implementation("com.google.android.gms:play-services-maps:19.0.0")
+    implementation(libs.places)
+
+    // ✅ Internal modules
     implementation(project(":VIEWMODEL"))
     implementation(project(":MODEL"))
     implementation(project(":HELPER"))
 
+    // ✅ Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

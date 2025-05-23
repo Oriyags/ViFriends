@@ -3,11 +3,11 @@
   <component name="deploymentTargetSelector">
     <selectionStates>
       <SelectionState runConfigName="app">
-        <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-05-17T18:29:10.552414800Z">
+        <option name="selectionMode" value="DIALOG" />
+        <DropdownSelection timestamp="2025-05-23T11:50:48.427417100Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=R5CW51XLKET" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\oriya\.android\avd\Pixel_8_Pro_API_35.avd" />
             </handle>
           </Target>
         </DropdownSelection>
@@ -16,6 +16,11 @@
             <Target type="DEFAULT_BOOT">
               <handle>
                 <DeviceId pluginId="PhysicalDevice" identifier="serial=R5CW51XLKET" />
+              </handle>
+            </Target>
+            <Target type="DEFAULT_BOOT">
+              <handle>
+                <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\oriya\.android\avd\Pixel_8_Pro_API_35.avd" />
               </handle>
             </Target>
           </targets>

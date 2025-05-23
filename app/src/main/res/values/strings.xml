@@ -7,4 +7,6 @@
     <string name="register">Register</string>
     <string name="register_prompt">Dont have an account? Click here to register.</string>
     <string name="send">Send</string>
+
+    <string name="google_maps_key">AIzaSyDn_VCCanlwi2tQ7nseAcoFu1eR7PSJCUk</string>
 </resources>

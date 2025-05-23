@@ -66,6 +66,17 @@
         android:layout_height="wrap_content"
         android:text="Visibility" />
 
+    <!-- Location Info (newly added) -->
+    <TextView
+        android:id="@+id/event_location_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="📍 Location"
+        android:textColor="#444"
+        android:textStyle="italic"
+        android:paddingTop="4dp"
+        android:visibility="gone" />
+
     <!-- Attendee Count -->
     <TextView
         android:id="@+id/event_attendance_count"

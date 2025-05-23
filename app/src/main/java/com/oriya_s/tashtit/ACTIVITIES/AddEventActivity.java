@@ -1,6 +1,5 @@
 package com.oriya_s.tashtit.ACTIVITIES;
 
-import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -13,16 +12,15 @@ import android.widget.*;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-import com.oriya_s.model.Friend;
 import com.oriya_s.tashtit.R;
 
 import java.util.*;
@@ -30,8 +28,8 @@ import java.util.*;
 public class AddEventActivity extends AppCompatActivity {
 
     private EditText eventNameInput, eventDescriptionInput;
-    private Button pickDateButton, chooseFriendsButton, saveButton, pickVideoButton;
-    private TextView dateText;
+    private Button pickDateButton, saveButton, pickVideoButton, pickLocationButton;
+    private TextView dateText, selectedLocationText;
     private RadioGroup visibilityGroup;
     private ImageView selectedImage, selectedVideoThumb;
 
@@ -40,6 +38,10 @@ public class AddEventActivity extends AppCompatActivity {
     private String imageDownloadUrl = "";
     private String videoDownloadUrl = "";
 
+    private double selectedLat = 0;
+    private double selectedLng = 0;
+    private String selectedAddress = "";
+
     private FirebaseFirestore db;
     private FirebaseAuth auth;
     private FirebaseStorage storage;
@@ -47,9 +49,6 @@ public class AddEventActivity extends AppCompatActivity {
 
     private ActivityResultLauncher<Intent> imagePickerLauncher;
     private ActivityResultLauncher<Intent> videoPickerLauncher;
-
-    private List<Friend> allFriends = new ArrayList<>();
-    private List<String> selectedFriendIds = new ArrayList<>();
 
     private String selectedVisibility = null;
 
@@ -68,58 +67,15 @@ public class AddEventActivity extends AppCompatActivity {
         pickDateButton = findViewById(R.id.pick_date_button);
         dateText = findViewById(R.id.date_text);
         visibilityGroup = findViewById(R.id.visibility_group);
-        chooseFriendsButton = findViewById(R.id.choose_friends_button);
         saveButton = findViewById(R.id.save_event_button);
         selectedImage = findViewById(R.id.selected_image);
         pickVideoButton = findViewById(R.id.pick_video_button);
         selectedVideoThumb = findViewById(R.id.selected_video_thumb);
-
-        chooseFriendsButton.setEnabled(false);
+        pickLocationButton = findViewById(R.id.pick_location_button);
+        selectedLocationText = findViewById(R.id.selected_location_text);
 
         initializePickers();
         setListeners();
-    }
-
-    private void fetchFriends(Runnable onComplete) {
-        if (currentUser == null) return;
-
-        db.collection("users")
-                .document(currentUser.getUid())
-                .collection("friends")
-                .whereEqualTo("status", "accepted")
-                .get()
-                .addOnSuccessListener(snapshot -> {
-                    allFriends.clear();
-                    List<Friend> tempFriends = new ArrayList<>();
-
-                    for (QueryDocumentSnapshot doc : snapshot) {
-                        Friend f = doc.toObject(Friend.class);
-                        tempFriends.add(f);
-                    }
-
-                    if (tempFriends.isEmpty()) {
-                        if (onComplete != null) onComplete.run();
-                        return;
-                    }
-
-                    for (Friend f : tempFriends) {
-                        db.collection("users").document(f.getFriendID())
-                                .get()
-                                .addOnSuccessListener(profileDoc -> {
-                                    if (profileDoc.exists() && profileDoc.contains("profile")) {
-                                        Map<String, Object> profile = (Map<String, Object>) profileDoc.get("profile");
-                                        if (profile != null) {
-                                            f.setName((String) profile.get("username"));
-                                            f.setAvatarUrl((String) profile.get("avatarUrl"));
-                                        }
-                                    }
-                                    allFriends.add(f);
-                                    if (allFriends.size() == tempFriends.size() && onComplete != null) {
-                                        onComplete.run();
-                                    }
-                                });
-                    }
-                });
     }
 
     private void initializePickers() {
@@ -155,42 +111,26 @@ public class AddEventActivity extends AppCompatActivity {
         pickDateButton.setOnClickListener(v -> showDatePicker());
         selectedImage.setOnClickListener(v -> pickImageFromGallery());
         pickVideoButton.setOnClickListener(v -> pickVideoFromGallery());
+        pickLocationButton.setOnClickListener(v -> {
+            Intent intent = new Intent(this, MapPickerActivity.class);
+            startActivityForResult(intent, 1001);
+        });
+
         saveButton.setOnClickListener(v -> {
             saveButton.setEnabled(false);
 
             int selectedId = visibilityGroup.getCheckedRadioButtonId();
             if (selectedId == R.id.visible_all) {
                 selectedVisibility = "all";
-                fetchFriends(this::uploadMediaAndSaveEvent);
             } else if (selectedId == R.id.visible_selected) {
                 selectedVisibility = "selected";
-                uploadMediaAndSaveEvent();
             } else {
                 Toast.makeText(this, "Please select visibility", Toast.LENGTH_SHORT).show();
                 saveButton.setEnabled(true);
+                return;
             }
-        });
 
-        chooseFriendsButton.setOnClickListener(v -> {
-            if (allFriends.isEmpty()) {
-                fetchFriends(this::showFriendSelectionDialog);
-            } else {
-                showFriendSelectionDialog();
-            }
-        });
-
-        visibilityGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            if (checkedId == R.id.visible_selected) {
-                chooseFriendsButton.setEnabled(true);
-                if (allFriends.isEmpty()) {
-                    fetchFriends(this::showFriendSelectionDialog);
-                } else {
-                    showFriendSelectionDialog();
-                }
-            } else {
-                chooseFriendsButton.setEnabled(false);
-                selectedFriendIds.clear();
-            }
+            uploadMediaAndSaveEvent();
         });
     }
 
@@ -200,36 +140,6 @@ public class AddEventActivity extends AppCompatActivity {
             String selectedDate = dayOfMonth + "/" + (month + 1) + "/" + year;
             dateText.setText(selectedDate);
         }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show();
-    }
-
-    private void showFriendSelectionDialog() {
-        if (allFriends.isEmpty()) {
-            Toast.makeText(this, "No friends to show", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        String[] names = new String[allFriends.size()];
-        boolean[] checkedItems = new boolean[allFriends.size()];
-
-        for (int i = 0; i < allFriends.size(); i++) {
-            names[i] = allFriends.get(i).getName();
-            checkedItems[i] = selectedFriendIds.contains(allFriends.get(i).getFriendID());
-        }
-
-        new AlertDialog.Builder(this)
-                .setTitle("Select Friends")
-                .setMultiChoiceItems(names, checkedItems, (dialog, indexSelected, isChecked) -> {
-                    String friendId = allFriends.get(indexSelected).getFriendID();
-                    if (isChecked) {
-                        if (!selectedFriendIds.contains(friendId)) {
-                            selectedFriendIds.add(friendId);
-                        }
-                    } else {
-                        selectedFriendIds.remove(friendId);
-                    }
-                })
-                .setPositiveButton("OK", null)
-                .show();
     }
 
     private void pickImageFromGallery() {
@@ -309,15 +219,6 @@ public class AddEventActivity extends AppCompatActivity {
                     }
                     String creatorAvatar = snapshot.getString("profile.avatarUrl");
 
-                    List<String> visibleFriendIds = new ArrayList<>();
-                    if ("all".equals(selectedVisibility)) {
-                        for (Friend f : allFriends) {
-                            visibleFriendIds.add(f.getFriendID());
-                        }
-                    } else if ("selected".equals(selectedVisibility)) {
-                        visibleFriendIds.addAll(selectedFriendIds);
-                    }
-
                     Map<String, Object> eventMap = new HashMap<>();
                     eventMap.put("name", name);
                     eventMap.put("description", description);
@@ -328,7 +229,9 @@ public class AddEventActivity extends AppCompatActivity {
                     eventMap.put("creatorName", creatorName);
                     eventMap.put("creatorAvatar", creatorAvatar);
                     eventMap.put("creatorId", currentUser.getUid());
-                    eventMap.put("visibleTo", visibleFriendIds);
+                    eventMap.put("latitude", selectedLat);
+                    eventMap.put("longitude", selectedLng);
+                    eventMap.put("address", selectedAddress);
 
                     db.collection("users")
                             .document(currentUser.getUid())
@@ -347,6 +250,33 @@ public class AddEventActivity extends AppCompatActivity {
                     Toast.makeText(this, "Failed to load user profile", Toast.LENGTH_SHORT).show();
                     saveButton.setEnabled(true);
                 });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == 1001 && resultCode == RESULT_OK && data != null) {
+            if (data.hasExtra("lat") && data.hasExtra("lng")) {
+                selectedLat = data.getDoubleExtra("lat", 0);
+                selectedLng = data.getDoubleExtra("lng", 0);
+            }
+
+            if (data.hasExtra("address")) {
+                selectedAddress = data.getStringExtra("address");
+            }
+
+            // Ensure the TextView is not null and update the display
+            if (selectedLocationText != null) {
+                if (selectedAddress != null && !selectedAddress.isEmpty()) {
+                    selectedLocationText.setText(selectedAddress);
+                } else {
+                    selectedLocationText.setText("Lat: " + selectedLat + ", Lng: " + selectedLng);
+                }
+            } else {
+                Toast.makeText(this, "Location selected but not displayed (UI error)", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     @Override
