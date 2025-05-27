@@ -11,6 +11,8 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.oriya_s.tashtit.R;
 import com.oriya_s.tashtit.ACTIVITIES.BASE.BaseActivity;
 
@@ -27,6 +29,21 @@ public class MainActivity extends BaseActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        // ✅ Save FCM token to Firestore if user is logged in
+        FirebaseMessaging.getInstance().getToken()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        String token = task.getResult();
+                        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                        if (currentUser != null) {
+                            FirebaseFirestore.getInstance()
+                                    .collection("users")
+                                    .document(currentUser.getUid())
+                                    .update("fcmToken", token);
+                        }
+                    }
+                });
 
         new Handler().postDelayed(() -> {
             FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();

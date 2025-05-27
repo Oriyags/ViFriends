@@ -42,6 +42,7 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation("com.google.firebase:firebase-auth:22.3.1")
     implementation("com.google.firebase:firebase-storage:21.0.0")
+    implementation("com.google.firebase:firebase-messaging:23.4.1") // ✅ Added FCM support
 
     // ✅ Jitsi Meet SDK for Video Calls
     implementation("org.jitsi.react:jitsi-meet-sdk:8.1.2")

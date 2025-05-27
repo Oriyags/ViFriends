@@ -1,6 +1,8 @@
 package com.oriya_s.tashtit.ACTIVITIES;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.Button;
@@ -10,6 +12,8 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -20,17 +24,21 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.oriya_s.model.Event;
 import com.oriya_s.tashtit.ADPTERS.EventAdapter;
 import com.oriya_s.tashtit.R;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class HomeActivity extends AppCompatActivity {
 
     private static final int ADD_EVENT_REQUEST = 1;
     private static final int FRIENDS_REQUEST_CODE = 2;
     private static final int EVENT_RESPONSE_REQUEST = 3;
+    private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 101;
 
     private ImageButton menuButton, eventsButton;
     private Button btnViewFriends;
@@ -51,10 +59,72 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
+        currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        firestore = FirebaseFirestore.getInstance();
+
+        if (currentUser == null) {
+            Toast.makeText(this, "Session expired. Please log in again.", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, LogInActivity.class));
+            finish();
+            return;
+        }
+
+        requestNotificationPermission();
+        sendWelcomeNotification();
         initializeViews();
         setListeners();
         loadEventsFromFirebase();
         loadFriendsCount();
+    }
+
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                        this,
+                        new String[]{android.Manifest.permission.POST_NOTIFICATIONS},
+                        NOTIFICATION_PERMISSION_REQUEST_CODE
+                );
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Notifications enabled!", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Notifications permission denied", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void sendWelcomeNotification() {
+        FirebaseMessaging.getInstance().getToken().addOnSuccessListener(token -> {
+            if (token != null && currentUser != null) {
+                firestore.collection("users")
+                        .document(currentUser.getUid())
+                        .get()
+                        .addOnSuccessListener(snapshot -> {
+                            String name = snapshot.getString("profile.username");
+
+                            Map<String, Object> messageData = new HashMap<>();
+                            messageData.put("senderId", currentUser.getUid()); // ✅ important
+                            messageData.put("senderName", name != null ? name : "Someone");
+                            messageData.put("text", "Welcome to ViFriends!");
+
+                            firestore.collection("users")
+                                    .document(currentUser.getUid())
+                                    .collection("chats")
+                                    .document("welcome")
+                                    .collection("messages")
+                                    .add(messageData);
+                        });
+            }
+        });
     }
 
     private void initializeViews() {
@@ -70,15 +140,6 @@ public class HomeActivity extends AppCompatActivity {
         adapter = new EventAdapter(this, eventList);
         eventListView.setLayoutManager(new LinearLayoutManager(this));
         eventListView.setAdapter(adapter);
-
-        currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        firestore = FirebaseFirestore.getInstance();
-
-        if (currentUser == null) {
-            Toast.makeText(this, "Session expired. Please log in again.", Toast.LENGTH_SHORT).show();
-            startActivity(new Intent(this, LogInActivity.class));
-            finish();
-        }
     }
 
     private void setListeners() {
