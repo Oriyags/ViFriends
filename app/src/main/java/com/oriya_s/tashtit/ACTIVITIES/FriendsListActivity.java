@@ -24,6 +24,7 @@ import com.oriya_s.tashtit.ADPTERS.FriendsListAdapter;
 import com.oriya_s.tashtit.R;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 public class FriendsListActivity extends AppCompatActivity {
 
@@ -176,6 +177,13 @@ public class FriendsListActivity extends AppCompatActivity {
                                 .get()
                                 .addOnSuccessListener(userDoc -> {
                                     if (userDoc.exists()) {
+                                        Map<String, Object> profile = (Map<String, Object>) userDoc.get("profile");
+                                        String friendName = profile != null ? (String) profile.get("username") : "Unknown";
+                                        String avatarUrl = profile != null ? (String) profile.get("profileImageUrl") : null;
+
+                                        f.setName(friendName); // ✅ Update the name
+                                        f.setAvatarUrl(avatarUrl); // ✅ Optional: update avatar
+
                                         boolean exists = false;
                                         for (Friend existing : friends) {
                                             if (existing.getFriendID().equals(friendId)) {
