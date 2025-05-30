@@ -88,7 +88,6 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
                 event.getVideoUri() != null && !event.getVideoUri().isEmpty() ? View.VISIBLE : View.GONE
         );
 
-        // Show location info if available
         if (event.getAddress() != null && !event.getAddress().isEmpty()) {
             holder.eventLocationInfo.setText("📍 " + event.getAddress());
             holder.eventLocationInfo.setVisibility(View.VISIBLE);
@@ -102,36 +101,9 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
 
         List<String> acceptedUserIds = event.getAcceptedUserIds();
         if (acceptedUserIds != null && !acceptedUserIds.isEmpty()) {
-            Iterator<String> iterator = acceptedUserIds.iterator();
-            List<String> toRemove = new ArrayList<>();
-
-            while (iterator.hasNext()) {
-                String userId = iterator.next();
-                db.collection("users").document(userId).get().addOnSuccessListener(snapshot -> {
-                    if (!snapshot.exists()) {
-                        toRemove.add(userId);
-                    }
-
-                    if (userId.equals(acceptedUserIds.get(acceptedUserIds.size() - 1))) {
-                        acceptedUserIds.removeAll(toRemove);
-                        event.setAcceptedUserIds(acceptedUserIds);
-
-                        if (!acceptedUserIds.isEmpty()) {
-                            holder.eventAttendanceCount.setVisibility(View.VISIBLE);
-                            String text = acceptedUserIds.size() == 1 ? "1 friend is going" : acceptedUserIds.size() + " friends are going";
-                            holder.eventAttendanceCount.setText(text);
-                        } else {
-                            holder.eventAttendanceCount.setVisibility(View.GONE);
-                        }
-
-                        db.collection("users")
-                                .document(event.getCreatorId())
-                                .collection("events")
-                                .document(event.getId())
-                                .update("acceptedUserIds", acceptedUserIds);
-                    }
-                });
-            }
+            holder.eventAttendanceCount.setVisibility(View.VISIBLE);
+            String text = acceptedUserIds.size() == 1 ? "1 friend is going" : acceptedUserIds.size() + " friends are going";
+            holder.eventAttendanceCount.setText(text);
         } else {
             holder.eventAttendanceCount.setVisibility(View.GONE);
         }
@@ -147,28 +119,37 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             holder.deleteButton.setVisibility(View.GONE);
         }
 
-        holder.itemView.setOnClickListener(v -> {
-            if (event.getLatitude() != 0 && event.getLongitude() != 0) {
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setData(Uri.parse("geo:" + event.getLatitude() + "," + event.getLongitude() +
-                        "?q=" + event.getLatitude() + "," + event.getLongitude() + "(Event Location)"));
-                intent.setPackage("com.google.android.apps.maps");
-                context.startActivity(intent);
-            } else {
-                Intent intent;
-                if (currentUser != null && currentUser.getUid().equals(event.getCreatorId())) {
-                    intent = new Intent(context, AttendeesActivity.class);
-                } else {
-                    intent = new Intent(context, EventResponseActivity.class);
-                }
-                intent.putExtra("event", event);
-                if (context instanceof Activity) {
-                    ((Activity) context).startActivityForResult(intent, 3);
-                } else {
-                    context.startActivity(intent);
-                }
-            }
+        // Friends button
+        holder.btnFriends.setOnClickListener(v -> {
+            Intent intent = new Intent(context, AttendeesActivity.class);
+            intent.putExtra("event", event);
+            context.startActivity(intent);
         });
+
+        // Video button
+        if (event.getVideoUri() != null && !event.getVideoUri().isEmpty()) {
+            holder.btnVideo.setVisibility(View.VISIBLE);
+            holder.btnVideo.setOnClickListener(v -> {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(event.getVideoUri()));
+                intent.setDataAndType(Uri.parse(event.getVideoUri()), "video/*");
+                context.startActivity(intent);
+            });
+        } else {
+            holder.btnVideo.setVisibility(View.GONE);
+        }
+
+        // Location button
+        if (event.getLatitude() != 0 && event.getLongitude() != 0) {
+            holder.btnMap.setVisibility(View.VISIBLE);
+            holder.btnMap.setOnClickListener(v -> {
+                Uri gmmIntentUri = Uri.parse("geo:" + event.getLatitude() + "," + event.getLongitude() + "?q=" + event.getLatitude() + "," + event.getLongitude() + "(Event)");
+                Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+                mapIntent.setPackage("com.google.android.apps.maps");
+                context.startActivity(mapIntent);
+            });
+        } else {
+            holder.btnMap.setVisibility(View.GONE);
+        }
     }
 
     @Override
@@ -179,7 +160,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     public static class EventViewHolder extends RecyclerView.ViewHolder {
         TextView eventTitle, eventDescription, eventVisibility, eventDate, eventVideoLabel, eventAuthorName, eventAttendanceCount, eventLocationInfo;
         ImageView eventImage, eventAuthorImage;
-        ImageButton deleteButton;
+        ImageButton deleteButton, btnFriends, btnVideo, btnMap;
 
         public EventViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -192,8 +173,12 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             eventAuthorName = itemView.findViewById(R.id.event_author_name);
             eventAuthorImage = itemView.findViewById(R.id.event_author_image);
             eventImage = itemView.findViewById(R.id.event_image_preview);
+            eventLocationInfo = itemView.findViewById(R.id.event_location_info);
             deleteButton = itemView.findViewById(R.id.event_delete_button);
-            eventLocationInfo = itemView.findViewById(R.id.event_location_info); // added for location display
+
+            btnFriends = itemView.findViewById(R.id.event_btn_friends);
+            btnVideo = itemView.findViewById(R.id.event_btn_video);
+            btnMap = itemView.findViewById(R.id.event_btn_map);
         }
     }
 }

@@ -7,7 +7,7 @@
     android:background="#EEEEEE"
     android:layout_marginBottom="8dp">
 
-    <!-- Author Row (Avatar + Name) at the top -->
+    <!-- Author Row -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -66,7 +66,7 @@
         android:layout_height="wrap_content"
         android:text="Visibility" />
 
-    <!-- Location Info (newly added) -->
+    <!-- Location Info -->
     <TextView
         android:id="@+id/event_location_info"
         android:layout_width="match_parent"
@@ -86,7 +86,7 @@
         android:textColor="#333333"
         android:textStyle="italic"
         android:paddingTop="4dp"
-        android:visibility="gone"/>
+        android:visibility="gone" />
 
     <!-- Image Preview -->
     <ImageView
@@ -108,6 +108,50 @@
         android:textColor="#444"
         android:textStyle="italic"
         android:paddingTop="4dp" />
+
+    <!-- Action Buttons Row -->
+    <LinearLayout
+        android:id="@+id/event_action_buttons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_horizontal"
+        android:paddingTop="8dp"
+        android:visibility="visible">
+
+        <ImageButton
+            android:id="@+id/event_btn_friends"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:src="@drawable/ic_friends"
+            android:contentDescription="View Friends"
+            android:backgroundTint="#4CAF50"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:tint="#FFFFFF" />
+
+        <ImageButton
+            android:id="@+id/event_btn_video"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:src="@drawable/ic_video"
+            android:contentDescription="View Video"
+            android:backgroundTint="#7B1FA2"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:tint="#FFFFFF" />
+
+        <ImageButton
+            android:id="@+id/event_btn_map"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:src="@drawable/ic_map"
+            android:contentDescription="View Map"
+            android:backgroundTint="#03A9F4"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:tint="#FFFFFF" />
+    </LinearLayout>
 
     <!-- Delete Button -->
     <ImageButton
