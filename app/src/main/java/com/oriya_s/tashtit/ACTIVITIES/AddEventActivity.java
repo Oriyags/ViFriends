@@ -13,14 +13,11 @@ import android.widget.*;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -29,6 +26,8 @@ import com.oriya_s.tashtit.R;
 import java.util.*;
 
 public class AddEventActivity extends AppCompatActivity {
+
+    private static final int REQUEST_SELECT_FRIENDS = 2001;
 
     private EditText eventNameInput, eventDescriptionInput;
     private Button pickDateButton, saveButton, pickVideoButton, pickLocationButton;
@@ -272,67 +271,8 @@ public class AddEventActivity extends AppCompatActivity {
     }
 
     private void showFriendSelectionDialog() {
-        if (currentUser == null) return;
-
-        db.collection("users")
-                .document(currentUser.getUid())
-                .collection("friends")
-                .whereEqualTo("status", "accepted")
-                .get()
-                .addOnSuccessListener(snapshot -> {
-                    List<String> friendIds = new ArrayList<>();
-                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
-                        friendIds.add(doc.getId());
-                    }
-
-                    if (friendIds.isEmpty()) {
-                        Toast.makeText(this, "No friends available", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    db.collection("users")
-                            .whereIn(FieldPath.documentId(), friendIds)
-                            .get()
-                            .addOnSuccessListener(friendSnapshots -> {
-                                List<String> friendNames = new ArrayList<>();
-                                List<String> resolvedIds = new ArrayList<>();
-
-                                for (DocumentSnapshot userDoc : friendSnapshots) {
-                                    String id = userDoc.getId();
-                                    Map<String, Object> profile = (Map<String, Object>) userDoc.get("profile");
-                                    String name = profile != null ? (String) profile.get("username") : "Unknown";
-                                    friendNames.add(name != null ? name : "Unnamed");
-                                    resolvedIds.add(id);
-                                }
-
-                                showFriendSelectionDialogUI(friendNames, resolvedIds);
-                            });
-                });
-    }
-
-    private void showFriendSelectionDialogUI(List<String> friendNames, List<String> friendIds) {
-        boolean[] checkedItems = new boolean[friendNames.size()];
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Select Friends");
-
-        builder.setMultiChoiceItems(
-                friendNames.toArray(new String[0]),
-                checkedItems,
-                (dialog, which, isChecked) -> {
-                    String friendId = friendIds.get(which);
-                    if (isChecked) {
-                        if (!selectedFriendUIDs.contains(friendId)) {
-                            selectedFriendUIDs.add(friendId);
-                        }
-                    } else {
-                        selectedFriendUIDs.remove(friendId);
-                    }
-                });
-
-        builder.setPositiveButton("Done", null);
-        AlertDialog dialog = builder.create();
-        dialog.getListView().setVerticalScrollBarEnabled(true);
-        dialog.show();
+        Intent intent = new Intent(this, FriendSelectorActivity.class);
+        startActivityForResult(intent, REQUEST_SELECT_FRIENDS);
     }
 
     @Override
@@ -358,6 +298,10 @@ public class AddEventActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(this, "Location selected but not displayed (UI error)", Toast.LENGTH_SHORT).show();
             }
+        } else if (requestCode == REQUEST_SELECT_FRIENDS && resultCode == RESULT_OK && data != null) {
+            selectedFriendUIDs = data.getStringArrayListExtra("selectedFriendUIDs");
+            if (selectedFriendUIDs == null) selectedFriendUIDs = new ArrayList<>();
+            Toast.makeText(this, selectedFriendUIDs.size() + " friend(s) selected", Toast.LENGTH_SHORT).show();
         }
     }
 
