@@ -193,30 +193,53 @@ public class HomeActivity extends AppCompatActivity {
                     if (e != null || snapshots == null) return;
 
                     eventList.clear();
+                    long currentTime = System.currentTimeMillis();
 
                     for (DocumentSnapshot doc : snapshots.getDocuments()) {
                         Event event = doc.toObject(Event.class);
                         if (event == null || event.getVisibility() == null || event.getCreatorId() == null)
                             continue;
 
-                        boolean isOwner = event.getCreatorId().equals(currentUser.getUid());
-                        boolean isFriend = acceptedFriendIds.contains(event.getCreatorId());
+                        // Parse event date
+                        String eventDateStr = event.getDate(); // Expected format: dd/MM/yyyy
+                        try {
+                            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy");
+                            sdf.setLenient(false);
+                            java.util.Date eventDate = sdf.parse(eventDateStr);
 
-                        boolean canView =
-                                isOwner ||
-                                        ("all".equals(event.getVisibility()) && isFriend) ||
-                                        ("selected".equals(event.getVisibility()) &&
-                                                event.getVisibleTo() != null &&
-                                                event.getVisibleTo().contains(currentUser.getUid()));
+                            // Check if it's more than 1 day past
+                            long oneDayMillis = 24 * 60 * 60 * 1000L;
+                            if (eventDate != null && currentTime > (eventDate.getTime() + oneDayMillis)) {
+                                // Delete expired event from Firebase
+                                firestore.collection("users")
+                                        .document(event.getCreatorId())
+                                        .collection("events")
+                                        .document(doc.getId())
+                                        .delete();
+                                continue; // Don't add it to local list
+                            }
 
-                        if (canView) {
-                            event.setId(doc.getId());
+                            boolean isOwner = event.getCreatorId().equals(currentUser.getUid());
+                            boolean isFriend = acceptedFriendIds.contains(event.getCreatorId());
 
-                            if (doc.contains("latitude")) event.setLatitude(doc.getDouble("latitude"));
-                            if (doc.contains("longitude")) event.setLongitude(doc.getDouble("longitude"));
-                            if (doc.contains("address")) event.setAddress(doc.getString("address"));
+                            boolean canView =
+                                    isOwner ||
+                                            ("all".equals(event.getVisibility()) && isFriend) ||
+                                            ("selected".equals(event.getVisibility()) &&
+                                                    event.getVisibleTo() != null &&
+                                                    event.getVisibleTo().contains(currentUser.getUid()));
 
-                            eventList.add(event);
+                            if (canView) {
+                                event.setId(doc.getId());
+
+                                if (doc.contains("latitude")) event.setLatitude(doc.getDouble("latitude"));
+                                if (doc.contains("longitude")) event.setLongitude(doc.getDouble("longitude"));
+                                if (doc.contains("address")) event.setAddress(doc.getString("address"));
+
+                                eventList.add(event);
+                            }
+                        } catch (Exception ex) {
+                            ex.printStackTrace(); // Handle invalid date format
                         }
                     }
 
