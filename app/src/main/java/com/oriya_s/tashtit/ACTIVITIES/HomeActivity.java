@@ -255,30 +255,23 @@ public class HomeActivity extends AppCompatActivity {
         }
 
         if (requestCode == EVENT_RESPONSE_REQUEST && data != null) {
+            Event updatedEvent = (Event) data.getSerializableExtra("event");
             boolean accepted = data.getBooleanExtra("accepted", false);
-            Event event = (Event) data.getSerializableExtra("event");
 
-            if (event != null) {
+            if (updatedEvent != null) {
+                // Update the existing event in the list
+                for (int i = 0; i < eventList.size(); i++) {
+                    Event e = eventList.get(i);
+                    if (e.getId().equals(updatedEvent.getId())) {
+                        eventList.set(i, updatedEvent);
+                        adapter.notifyItemChanged(i);
+                        break;
+                    }
+                }
+
                 if (accepted) {
-                    firestore.collection("users")
-                            .whereEqualTo("profile.username", event.getCreatorName())
-                            .get()
-                            .addOnSuccessListener(query -> {
-                                if (!query.isEmpty()) {
-                                    String creatorId = query.getDocuments().get(0).getId();
-                                    firestore.collection("users")
-                                            .document(creatorId)
-                                            .collection("events")
-                                            .document(event.getId())
-                                            .update("visibleTo", com.google.firebase.firestore.FieldValue.arrayUnion(currentUser.getUid()))
-                                            .addOnSuccessListener(unused -> {
-                                                Toast.makeText(this, "Event accepted", Toast.LENGTH_SHORT).show();
-                                            });
-                                }
-                            });
+                    Toast.makeText(this, "Event accepted", Toast.LENGTH_SHORT).show();
                 } else {
-                    eventList.removeIf(e -> e.getId().equals(event.getId()));
-                    adapter.notifyDataSetChanged();
                     Toast.makeText(this, "Event declined", Toast.LENGTH_SHORT).show();
                 }
             }

@@ -92,14 +92,12 @@ public class EventResponseActivity extends AppCompatActivity {
         btnAccept.setOnClickListener(v -> {
             if (currentUserId == null) return;
 
-            FirebaseFirestore.getInstance()
-                    .collection("users")
+            db.collection("users")
                     .document(event.getCreatorId())
                     .collection("events")
                     .document(event.getId())
                     .update("acceptedUserIds", com.google.firebase.firestore.FieldValue.arrayUnion(currentUserId))
                     .addOnSuccessListener(unused -> {
-                        // Also update the local event object for returning to HomeActivity
                         if (event.getAcceptedUserIds() == null) {
                             event.setAcceptedUserIds(new ArrayList<>());
                         }
@@ -118,13 +116,28 @@ public class EventResponseActivity extends AppCompatActivity {
                     });
         });
 
-
         btnDecline.setOnClickListener(v -> {
-            Intent resultIntent = new Intent();
-            resultIntent.putExtra("accepted", false);
-            resultIntent.putExtra("event", event);
-            setResult(RESULT_OK, resultIntent);
-            finish();
+            if (currentUserId == null) return;
+
+            db.collection("users")
+                    .document(event.getCreatorId())
+                    .collection("events")
+                    .document(event.getId())
+                    .update("acceptedUserIds", com.google.firebase.firestore.FieldValue.arrayRemove(currentUserId))
+                    .addOnSuccessListener(unused -> {
+                        if (event.getAcceptedUserIds() != null) {
+                            event.getAcceptedUserIds().remove(currentUserId);
+                        }
+
+                        Intent resultIntent = new Intent();
+                        resultIntent.putExtra("accepted", false);
+                        resultIntent.putExtra("event", event);
+                        setResult(RESULT_OK, resultIntent);
+                        finish();
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Error updating response", Toast.LENGTH_SHORT).show();
+                    });
         });
     }
 }

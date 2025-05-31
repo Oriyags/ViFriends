@@ -25,7 +25,6 @@ import com.oriya_s.tashtit.ACTIVITIES.HomeActivity;
 import com.oriya_s.tashtit.R;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHolder> {
@@ -138,7 +137,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             holder.btnVideo.setVisibility(View.GONE);
         }
 
-        // Location button
+        // Map button
         if (event.getLatitude() != 0 && event.getLongitude() != 0) {
             holder.btnMap.setVisibility(View.VISIBLE);
             holder.btnMap.setOnClickListener(v -> {
@@ -150,6 +149,15 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         } else {
             holder.btnMap.setVisibility(View.GONE);
         }
+
+        // Event click: for non-creator users, open EventResponseActivity
+        holder.itemView.setOnClickListener(v -> {
+            if (currentUser != null && !currentUser.getUid().equals(event.getCreatorId())) {
+                Intent intent = new Intent(context, EventResponseActivity.class);
+                intent.putExtra("event", event);
+                ((Activity) context).startActivityForResult(intent, 1234);
+            }
+        });
     }
 
     @Override
