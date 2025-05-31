@@ -15,7 +15,6 @@
         android:padding="24dp"
         android:gravity="center_horizontal">
 
-        <!-- 🎨 Illusion header image -->
         <ImageView
             android:id="@+id/settings_illustration"
             android:layout_width="200dp"
@@ -24,7 +23,6 @@
             android:src="@drawable/settings_illustration"
             android:contentDescription="Settings Illustration" />
 
-        <!-- 🌀 Decorative divider -->
         <ImageView
             android:layout_width="match_parent"
             android:layout_height="32dp"
@@ -42,7 +40,7 @@
             android:layout_marginTop="12dp"
             android:layout_marginBottom="24dp" />
 
-        <!-- 🎛 Theme & About Card -->
+        <!-- ℹ️ About Card (without toggle theme) -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -58,20 +56,6 @@
                 android:padding="16dp">
 
                 <Button
-                    android:id="@+id/btn_toggle_theme"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Toggle App Theme"
-                    android:drawableStart="@drawable/ic_theme"
-                    android:drawablePadding="10dp"
-                    android:padding="14dp"
-                    android:textAllCaps="false" />
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="12dp" />
-
-                <Button
                     android:id="@+id/btn_about"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -80,7 +64,6 @@
                     android:drawablePadding="10dp"
                     android:padding="14dp"
                     android:textAllCaps="false" />
-
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
@@ -109,7 +92,6 @@
                     android:drawablePadding="10dp"
                     android:padding="14dp"
                     android:textAllCaps="false" />
-
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
@@ -136,7 +118,6 @@
                     android:drawablePadding="10dp"
                     android:padding="14dp"
                     android:textAllCaps="false" />
-
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 

@@ -27,7 +27,7 @@ import java.util.List;
 
 public class SettingsActivity extends AppCompatActivity {
 
-    private Button btnToggleTheme, btnAbout, btnDeleteAccount, btnInvite;
+    private Button btnAbout, btnDeleteAccount, btnInvite;
     private FirebaseAuth auth;
     private FirebaseFirestore db;
     private FirebaseStorage storage;
@@ -45,7 +45,6 @@ public class SettingsActivity extends AppCompatActivity {
             return insets;
         });
 
-        btnToggleTheme = findViewById(R.id.btn_toggle_theme);
         btnAbout = findViewById(R.id.btn_about);
         btnDeleteAccount = findViewById(R.id.btn_delete_account);
         btnInvite = findViewById(R.id.btn_invite);
@@ -55,19 +54,9 @@ public class SettingsActivity extends AppCompatActivity {
         storage = FirebaseStorage.getInstance();
         currentUser = auth.getCurrentUser();
 
-        btnToggleTheme.setOnClickListener(v -> toggleTheme());
         btnAbout.setOnClickListener(v -> showAboutDialog());
         btnDeleteAccount.setOnClickListener(v -> confirmDeleteAccount());
         btnInvite.setOnClickListener(v -> inviteFriend());
-    }
-
-    private void toggleTheme() {
-        int currentMode = AppCompatDelegate.getDefaultNightMode();
-        if (currentMode == AppCompatDelegate.MODE_NIGHT_YES) {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-        } else {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-        }
     }
 
     private void showAboutDialog() {
@@ -97,9 +86,9 @@ public class SettingsActivity extends AppCompatActivity {
 
         // Remove profile image
         StorageReference profileRef = storage.getReference("profile_images/" + uid + ".jpg");
-        profileRef.delete(); // Ignore errors if not found
+        profileRef.delete();
 
-        // Remove from other users' friends lists
+        // Remove from friends
         db.collectionGroup("friends")
                 .whereEqualTo("friendID", uid)
                 .get()
@@ -109,7 +98,7 @@ public class SettingsActivity extends AppCompatActivity {
                     }
                 });
 
-        // Delete from other users' chat metadata + delete chats and messages
+        // Delete chats
         db.collection("Chats")
                 .whereArrayContains("participants", uid)
                 .get()
@@ -142,12 +131,10 @@ public class SettingsActivity extends AppCompatActivity {
                     }
                 });
 
-        // Delete user’s subcollections
         deleteSubcollection("users", uid, "chats");
         deleteSubcollection("users", uid, "friends");
         deleteSubcollection("users", uid, "events");
 
-        // Delete user document and Firebase Auth account
         db.collection("users").document(uid).delete()
                 .addOnSuccessListener(aVoid -> {
                     currentUser.delete()
@@ -179,7 +166,6 @@ public class SettingsActivity extends AppCompatActivity {
         startActivity(Intent.createChooser(intent, "Invite via"));
     }
 
-    // NEW METHOD: Remove user from acceptedUserIds in all events
     private void removeUserFromAllEvents(String userIdToRemove) {
         db.collectionGroup("events")
                 .get()
