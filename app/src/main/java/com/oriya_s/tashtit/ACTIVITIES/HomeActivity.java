@@ -31,7 +31,9 @@ import com.oriya_s.tashtit.R;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -54,6 +56,8 @@ public class HomeActivity extends AppCompatActivity {
     private FirebaseFirestore firestore;
     private ListenerRegistration eventListener;
 
+    private final Set<String> acceptedFriendIds = new HashSet<>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,7 +77,7 @@ public class HomeActivity extends AppCompatActivity {
         sendWelcomeNotification();
         initializeViews();
         setListeners();
-        loadEventsFromFirebase();
+        loadAcceptedFriendsAndEvents();
         loadFriendsCount();
     }
 
@@ -112,7 +116,7 @@ public class HomeActivity extends AppCompatActivity {
                             String name = snapshot.getString("profile.username");
 
                             Map<String, Object> messageData = new HashMap<>();
-                            messageData.put("senderId", currentUser.getUid()); // ✅ important
+                            messageData.put("senderId", currentUser.getUid());
                             messageData.put("senderName", name != null ? name : "Someone");
                             messageData.put("text", "Welcome to ViFriends!");
 
@@ -164,12 +168,30 @@ public class HomeActivity extends AppCompatActivity {
         return true;
     }
 
+    private void loadAcceptedFriendsAndEvents() {
+        if (currentUser == null) return;
+
+        firestore.collection("users")
+                .document(currentUser.getUid())
+                .collection("friends")
+                .whereEqualTo("status", "accepted")
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    acceptedFriendIds.clear();
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        acceptedFriendIds.add(doc.getId());
+                    }
+                    loadEventsFromFirebase(); // Load events after friend list is ready
+                });
+    }
+
     private void loadEventsFromFirebase() {
         if (currentUser == null) return;
 
         eventListener = firestore.collectionGroup("events")
                 .addSnapshotListener((snapshots, e) -> {
                     if (e != null || snapshots == null) return;
+
                     eventList.clear();
 
                     for (DocumentSnapshot doc : snapshots.getDocuments()) {
@@ -178,14 +200,16 @@ public class HomeActivity extends AppCompatActivity {
                             continue;
 
                         boolean isOwner = event.getCreatorId().equals(currentUser.getUid());
+                        boolean isFriend = acceptedFriendIds.contains(event.getCreatorId());
 
-                        if (
+                        boolean canView =
                                 isOwner ||
-                                        "all".equals(event.getVisibility()) ||
+                                        ("all".equals(event.getVisibility()) && isFriend) ||
                                         ("selected".equals(event.getVisibility()) &&
                                                 event.getVisibleTo() != null &&
-                                                event.getVisibleTo().contains(currentUser.getUid()))
-                        ) {
+                                                event.getVisibleTo().contains(currentUser.getUid()));
+
+                        if (canView) {
                             event.setId(doc.getId());
 
                             if (doc.contains("latitude")) event.setLatitude(doc.getDouble("latitude"));

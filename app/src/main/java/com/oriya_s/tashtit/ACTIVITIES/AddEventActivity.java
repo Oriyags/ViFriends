@@ -13,11 +13,14 @@ import android.widget.*;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -51,6 +54,7 @@ public class AddEventActivity extends AppCompatActivity {
     private ActivityResultLauncher<Intent> videoPickerLauncher;
 
     private String selectedVisibility = null;
+    private List<String> selectedFriendUIDs = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -116,21 +120,32 @@ public class AddEventActivity extends AppCompatActivity {
             startActivityForResult(intent, 1001);
         });
 
+        visibilityGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.visible_selected) {
+                showFriendSelectionDialog();
+            }
+        });
+
         saveButton.setOnClickListener(v -> {
             saveButton.setEnabled(false);
 
             int selectedId = visibilityGroup.getCheckedRadioButtonId();
             if (selectedId == R.id.visible_all) {
                 selectedVisibility = "all";
+                selectedFriendUIDs.clear();
+                uploadMediaAndSaveEvent();
             } else if (selectedId == R.id.visible_selected) {
                 selectedVisibility = "selected";
+                if (selectedFriendUIDs.isEmpty()) {
+                    Toast.makeText(this, "Select at least one friend", Toast.LENGTH_SHORT).show();
+                    saveButton.setEnabled(true);
+                    return;
+                }
+                uploadMediaAndSaveEvent();
             } else {
                 Toast.makeText(this, "Please select visibility", Toast.LENGTH_SHORT).show();
                 saveButton.setEnabled(true);
-                return;
             }
-
-            uploadMediaAndSaveEvent();
         });
     }
 
@@ -233,6 +248,10 @@ public class AddEventActivity extends AppCompatActivity {
                     eventMap.put("longitude", selectedLng);
                     eventMap.put("address", selectedAddress);
 
+                    if ("selected".equals(selectedVisibility)) {
+                        eventMap.put("visibleTo", selectedFriendUIDs);
+                    }
+
                     db.collection("users")
                             .document(currentUser.getUid())
                             .collection("events")
@@ -252,6 +271,70 @@ public class AddEventActivity extends AppCompatActivity {
                 });
     }
 
+    private void showFriendSelectionDialog() {
+        if (currentUser == null) return;
+
+        db.collection("users")
+                .document(currentUser.getUid())
+                .collection("friends")
+                .whereEqualTo("status", "accepted")
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    List<String> friendIds = new ArrayList<>();
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        friendIds.add(doc.getId());
+                    }
+
+                    if (friendIds.isEmpty()) {
+                        Toast.makeText(this, "No friends available", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    db.collection("users")
+                            .whereIn(FieldPath.documentId(), friendIds)
+                            .get()
+                            .addOnSuccessListener(friendSnapshots -> {
+                                List<String> friendNames = new ArrayList<>();
+                                List<String> resolvedIds = new ArrayList<>();
+
+                                for (DocumentSnapshot userDoc : friendSnapshots) {
+                                    String id = userDoc.getId();
+                                    Map<String, Object> profile = (Map<String, Object>) userDoc.get("profile");
+                                    String name = profile != null ? (String) profile.get("username") : "Unknown";
+                                    friendNames.add(name != null ? name : "Unnamed");
+                                    resolvedIds.add(id);
+                                }
+
+                                showFriendSelectionDialogUI(friendNames, resolvedIds);
+                            });
+                });
+    }
+
+    private void showFriendSelectionDialogUI(List<String> friendNames, List<String> friendIds) {
+        boolean[] checkedItems = new boolean[friendNames.size()];
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select Friends");
+
+        builder.setMultiChoiceItems(
+                friendNames.toArray(new String[0]),
+                checkedItems,
+                (dialog, which, isChecked) -> {
+                    String friendId = friendIds.get(which);
+                    if (isChecked) {
+                        if (!selectedFriendUIDs.contains(friendId)) {
+                            selectedFriendUIDs.add(friendId);
+                        }
+                    } else {
+                        selectedFriendUIDs.remove(friendId);
+                    }
+                });
+
+        builder.setPositiveButton("Done", null);
+        AlertDialog dialog = builder.create();
+        dialog.getListView().setVerticalScrollBarEnabled(true);
+        dialog.show();
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -266,7 +349,6 @@ public class AddEventActivity extends AppCompatActivity {
                 selectedAddress = data.getStringExtra("address");
             }
 
-            // Ensure the TextView is not null and update the display
             if (selectedLocationText != null) {
                 if (selectedAddress != null && !selectedAddress.isEmpty()) {
                     selectedLocationText.setText(selectedAddress);
