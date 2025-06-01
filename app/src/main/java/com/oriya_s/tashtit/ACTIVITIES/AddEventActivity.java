@@ -27,32 +27,45 @@ import java.util.*;
 
 public class AddEventActivity extends AppCompatActivity {
 
+    // Request code used for starting the Friend Selector activity
+    // (A unique constant used to distinguish between different startActivityForResult)
     private static final int REQUEST_SELECT_FRIENDS = 2001;
 
-    private EditText eventNameInput, eventDescriptionInput;
-    private Button pickDateButton, saveButton, pickVideoButton, pickLocationButton;
-    private TextView dateText, selectedLocationText;
+    // UI elements for user input and actions
+    private EditText   eventNameInput, eventDescriptionInput;
+    private Button     pickDateButton, saveButton, pickVideoButton, pickLocationButton;
+    private TextView   dateText, selectedLocationText;
     private RadioGroup visibilityGroup;
-    private ImageView selectedImage, selectedVideoThumb;
+    private ImageView  selectedImage, selectedVideoThumb;
 
+    // URIs to hold selected image and video files
     private Uri imageUri = null;
     private Uri videoUri = null;
+
+    // URLs to be retrieved after uploading media to Firebase Storage
     private String imageDownloadUrl = "";
     private String videoDownloadUrl = "";
 
-    private double selectedLat = 0;
-    private double selectedLng = 0;
+    // Variables to store location data
+    private double selectedLat     = 0;
+    private double selectedLng     = 0;
     private String selectedAddress = "";
 
+    // Firestore database instance for saving and loading event data
     private FirebaseFirestore db;
-    private FirebaseAuth auth;
-    private FirebaseStorage storage;
-    private FirebaseUser currentUser;
+    // Firebase Authentication instance to manage user login
+    private FirebaseAuth      auth;
+    // Firebase Storage instance for uploading images/videos
+    private FirebaseStorage   storage;
+    // Currently logged-in user
+    private FirebaseUser      currentUser;
 
+    // Launchers to handle results from image and video pickers
     private ActivityResultLauncher<Intent> imagePickerLauncher;
     private ActivityResultLauncher<Intent> videoPickerLauncher;
 
-    private String selectedVisibility = null;
+    // Event visibility and selected friends list
+    private String       selectedVisibility = null;
     private List<String> selectedFriendUIDs = new ArrayList<>();
 
     @Override
@@ -60,34 +73,37 @@ public class AddEventActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_event);
 
-        auth = FirebaseAuth.getInstance();
-        db = FirebaseFirestore.getInstance();
-        storage = FirebaseStorage.getInstance();
+        // Initialize Firebase services
+        auth        = FirebaseAuth.getInstance();
+        db          = FirebaseFirestore.getInstance();
+        storage     = FirebaseStorage.getInstance();
         currentUser = auth.getCurrentUser();
 
-        eventNameInput = findViewById(R.id.event_name);
+        // Bind UI elements
+        eventNameInput        = findViewById(R.id.event_name);
         eventDescriptionInput = findViewById(R.id.event_description);
-        pickDateButton = findViewById(R.id.pick_date_button);
-        dateText = findViewById(R.id.date_text);
-        visibilityGroup = findViewById(R.id.visibility_group);
-        saveButton = findViewById(R.id.save_event_button);
-        selectedImage = findViewById(R.id.selected_image);
-        pickVideoButton = findViewById(R.id.pick_video_button);
-        selectedVideoThumb = findViewById(R.id.selected_video_thumb);
-        pickLocationButton = findViewById(R.id.pick_location_button);
-        selectedLocationText = findViewById(R.id.selected_location_text);
+        pickDateButton        = findViewById(R.id.pick_date_button);
+        dateText              = findViewById(R.id.date_text);
+        visibilityGroup       = findViewById(R.id.visibility_group);
+        saveButton            = findViewById(R.id.save_event_button);
+        selectedImage         = findViewById(R.id.selected_image);
+        pickVideoButton       = findViewById(R.id.pick_video_button);
+        selectedVideoThumb    = findViewById(R.id.selected_video_thumb);
+        pickLocationButton    = findViewById(R.id.pick_location_button);
+        selectedLocationText  = findViewById(R.id.selected_location_text);
 
         initializePickers();
         setListeners();
     }
 
+    // Initializes image and video picker launchers
     private void initializePickers() {
         imagePickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                        imageUri = result.getData().getData();
-                        Glide.with(this).load(imageUri).into(selectedImage);
+                        imageUri = result.getData().getData();  // Get image URI
+                        Glide.with(this).load(imageUri).into(selectedImage);  // Load into ImageView
                     }
                 });
 
@@ -95,13 +111,13 @@ public class AddEventActivity extends AppCompatActivity {
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                        videoUri = result.getData().getData();
+                        videoUri = result.getData().getData();  // Get video URI
                         try {
                             Bitmap thumb = ThumbnailUtils.createVideoThumbnail(
                                     videoUri.getPath(),
                                     MediaStore.Images.Thumbnails.MINI_KIND
                             );
-                            selectedVideoThumb.setImageBitmap(thumb);
+                            selectedVideoThumb.setImageBitmap(thumb);  // Set video thumbnail
                             selectedVideoThumb.setVisibility(View.VISIBLE);
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -110,6 +126,7 @@ public class AddEventActivity extends AppCompatActivity {
                 });
     }
 
+    // Attach listeners for all interactive UI elements
     private void setListeners() {
         pickDateButton.setOnClickListener(v -> showDatePicker());
         selectedImage.setOnClickListener(v -> pickImageFromGallery());
@@ -119,14 +136,16 @@ public class AddEventActivity extends AppCompatActivity {
             startActivityForResult(intent, 1001);
         });
 
+        // Handle radio button changes for visibility
         visibilityGroup.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == R.id.visible_selected) {
                 showFriendSelectionDialog();
             }
         });
 
+        // Save event logic when user clicks save
         saveButton.setOnClickListener(v -> {
-            saveButton.setEnabled(false);
+            saveButton.setEnabled(false); // Disable to prevent double submission
 
             int selectedId = visibilityGroup.getCheckedRadioButtonId();
             if (selectedId == R.id.visible_all) {
@@ -148,6 +167,7 @@ public class AddEventActivity extends AppCompatActivity {
         });
     }
 
+    // Opens a date picker dialog and sets selected date
     private void showDatePicker() {
         Calendar calendar = Calendar.getInstance();
         new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
@@ -156,18 +176,21 @@ public class AddEventActivity extends AppCompatActivity {
         }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show();
     }
 
+    // Launch gallery to pick an image
     private void pickImageFromGallery() {
         Intent intent = new Intent(Intent.ACTION_PICK);
         intent.setType("image/*");
         imagePickerLauncher.launch(intent);
     }
 
+    // Launch gallery to pick a video
     private void pickVideoFromGallery() {
         Intent intent = new Intent(Intent.ACTION_PICK);
         intent.setType("video/*");
         videoPickerLauncher.launch(intent);
     }
 
+    // Decide which media (if any) to upload before saving event
     private void uploadMediaAndSaveEvent() {
         if (imageUri != null) {
             uploadImage();
@@ -178,6 +201,7 @@ public class AddEventActivity extends AppCompatActivity {
         }
     }
 
+    // Upload selected image to Firebase Storage
     private void uploadImage() {
         StorageReference ref = storage.getReference("event_images/" + System.currentTimeMillis() + ".jpg");
         ref.putFile(imageUri)
@@ -195,6 +219,7 @@ public class AddEventActivity extends AppCompatActivity {
                 });
     }
 
+    // Upload selected video to Firebase Storage
     private void uploadVideo() {
         StorageReference ref = storage.getReference("event_videos/" + System.currentTimeMillis() + ".mp4");
         ref.putFile(videoUri)
@@ -208,11 +233,13 @@ public class AddEventActivity extends AppCompatActivity {
                 });
     }
 
+    // Final step: Save event details in Firestore
     private void saveEvent() {
-        String name = eventNameInput.getText().toString().trim();
+        String name        = eventNameInput.getText().toString().trim();
         String description = eventDescriptionInput.getText().toString().trim();
-        String date = dateText.getText().toString();
+        String date        = dateText.getText().toString();
 
+        // Validate inputs
         if (name.isEmpty() || description.isEmpty() || date.equals("No date selected")) {
             Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
             saveButton.setEnabled(true);
@@ -225,6 +252,7 @@ public class AddEventActivity extends AppCompatActivity {
             return;
         }
 
+        // Fetch current user profile to get display name and avatar
         db.collection("users").document(currentUser.getUid()).get()
                 .addOnSuccessListener(snapshot -> {
                     String creatorName = snapshot.getString("profile.username");
@@ -233,6 +261,7 @@ public class AddEventActivity extends AppCompatActivity {
                     }
                     String creatorAvatar = snapshot.getString("profile.avatarUrl");
 
+                    // Create map with event data
                     Map<String, Object> eventMap = new HashMap<>();
                     eventMap.put("name", name);
                     eventMap.put("description", description);
@@ -251,13 +280,14 @@ public class AddEventActivity extends AppCompatActivity {
                         eventMap.put("visibleTo", selectedFriendUIDs);
                     }
 
+                    // Save event to Firestore under the current user's document
                     db.collection("users")
                             .document(currentUser.getUid())
                             .collection("events")
                             .add(eventMap)
                             .addOnSuccessListener(documentReference -> {
                                 Toast.makeText(this, "Event saved successfully!", Toast.LENGTH_SHORT).show();
-                                finish();
+                                finish(); // Close activity
                             })
                             .addOnFailureListener(e -> {
                                 Toast.makeText(this, "Error saving event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -270,11 +300,13 @@ public class AddEventActivity extends AppCompatActivity {
                 });
     }
 
+    // Opens a screen to let user select which friends can view the event
     private void showFriendSelectionDialog() {
         Intent intent = new Intent(this, FriendSelectorActivity.class);
         startActivityForResult(intent, REQUEST_SELECT_FRIENDS);
     }
 
+    // Handle results from activities like friend selection and map picking
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -289,6 +321,7 @@ public class AddEventActivity extends AppCompatActivity {
                 selectedAddress = data.getStringExtra("address");
             }
 
+            // Update the UI with the selected location
             if (selectedLocationText != null) {
                 if (selectedAddress != null && !selectedAddress.isEmpty()) {
                     selectedLocationText.setText(selectedAddress);
@@ -305,6 +338,7 @@ public class AddEventActivity extends AppCompatActivity {
         }
     }
 
+    // Reset image and video URIs to release memory
     @Override
     protected void onDestroy() {
         super.onDestroy();
