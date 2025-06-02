@@ -28,10 +28,12 @@ import java.util.List;
 public class SettingsActivity extends AppCompatActivity {
 
     private Button btnAbout, btnDeleteAccount, btnInvite;
-    private FirebaseAuth auth;
+
+    // Firebase instances
+    private FirebaseAuth      auth;
     private FirebaseFirestore db;
-    private FirebaseStorage storage;
-    private FirebaseUser currentUser;
+    private FirebaseStorage   storage;
+    private FirebaseUser      currentUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,20 +47,24 @@ public class SettingsActivity extends AppCompatActivity {
             return insets;
         });
 
-        btnAbout = findViewById(R.id.btn_about);
+        // Bind UI elements
+        btnAbout         = findViewById(R.id.btn_about);
         btnDeleteAccount = findViewById(R.id.btn_delete_account);
-        btnInvite = findViewById(R.id.btn_invite);
+        btnInvite        = findViewById(R.id.btn_invite);
 
-        auth = FirebaseAuth.getInstance();
-        db = FirebaseFirestore.getInstance();
-        storage = FirebaseStorage.getInstance();
+        // Initialize Firebase components
+        auth        = FirebaseAuth.getInstance();
+        db          = FirebaseFirestore.getInstance();
+        storage     = FirebaseStorage.getInstance();
         currentUser = auth.getCurrentUser();
 
+        // Set click listeners
         btnAbout.setOnClickListener(v -> showAboutDialog());
         btnDeleteAccount.setOnClickListener(v -> confirmDeleteAccount());
         btnInvite.setOnClickListener(v -> inviteFriend());
     }
 
+    // Displays information about the app in a dialog
     private void showAboutDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("About ViFriends")
@@ -67,6 +73,7 @@ public class SettingsActivity extends AppCompatActivity {
                 .show();
     }
 
+    // Shows confirmation dialog before deleting the user's account
     private void confirmDeleteAccount() {
         new AlertDialog.Builder(this)
                 .setTitle("Delete Account")
@@ -76,19 +83,18 @@ public class SettingsActivity extends AppCompatActivity {
                 .show();
     }
 
+    // Deletes all user data from Firebase
     private void deleteAccount() {
         if (currentUser == null) return;
-
         String uid = currentUser.getUid();
 
-        // Remove user from all acceptedUserIds in events
-        removeUserFromAllEvents(uid);
+        removeUserFromAllEvents(uid); // Removes user from all event participation lists
 
-        // Remove profile image
+        // Delete profile image from Firebase Storage
         StorageReference profileRef = storage.getReference("profile_images/" + uid + ".jpg");
         profileRef.delete();
 
-        // Remove from friends
+        // Delete all references to the user from other users' friend lists
         db.collectionGroup("friends")
                 .whereEqualTo("friendID", uid)
                 .get()
@@ -98,7 +104,7 @@ public class SettingsActivity extends AppCompatActivity {
                     }
                 });
 
-        // Delete chats
+        // Delete all chat messages and chat metadata involving this user
         db.collection("Chats")
                 .whereArrayContains("participants", uid)
                 .get()
@@ -107,6 +113,7 @@ public class SettingsActivity extends AppCompatActivity {
                         String chatId = chatDoc.getId();
                         List<?> participants = (List<?>) chatDoc.get("participants");
 
+                        // Delete all messages in the chat
                         db.collection("Chats").document(chatId)
                                 .collection("messages")
                                 .get()
@@ -116,8 +123,10 @@ public class SettingsActivity extends AppCompatActivity {
                                     }
                                 });
 
+                        // Delete the chat document itself
                         db.collection("Chats").document(chatId).delete();
 
+                        // Delete chat references in other participants' subcollections
                         for (Object userIdObj : participants) {
                             String participantId = userIdObj.toString();
                             if (!participantId.equals(uid)) {
@@ -131,10 +140,12 @@ public class SettingsActivity extends AppCompatActivity {
                     }
                 });
 
+        // Delete subcollections: chats, friends, and events
         deleteSubcollection("users", uid, "chats");
         deleteSubcollection("users", uid, "friends");
         deleteSubcollection("users", uid, "events");
 
+        // Delete the user document and then the Auth account
         db.collection("users").document(uid).delete()
                 .addOnSuccessListener(aVoid -> {
                     currentUser.delete()
@@ -149,6 +160,7 @@ public class SettingsActivity extends AppCompatActivity {
                 });
     }
 
+    // Deletes all documents from a specified subcollection
     private void deleteSubcollection(String parentCollection, String docId, String subcollection) {
         CollectionReference subRef = db.collection(parentCollection).document(docId).collection(subcollection);
         subRef.get().addOnSuccessListener(snapshot -> {
@@ -158,6 +170,7 @@ public class SettingsActivity extends AppCompatActivity {
         });
     }
 
+    // Opens a share intent so the user can invite friends to the app
     private void inviteFriend() {
         Intent intent = new Intent(Intent.ACTION_SEND);
         intent.setType("text/plain");
@@ -166,6 +179,7 @@ public class SettingsActivity extends AppCompatActivity {
         startActivity(Intent.createChooser(intent, "Invite via"));
     }
 
+    // Removes the current user from the acceptedUserIds list in all events
     private void removeUserFromAllEvents(String userIdToRemove) {
         db.collectionGroup("events")
                 .get()
