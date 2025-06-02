@@ -38,9 +38,11 @@ public class AttendeesAdapter extends RecyclerView.Adapter<AttendeesAdapter.Atte
         UserProfile attendee = attendees.get(position);
         holder.attendeeName.setText(attendee.getUsername());
 
-        if (attendee.getAvatarUrl() != null && !attendee.getAvatarUrl().isEmpty()) {
+        // Load profile image using Glide
+        String avatarUrl = attendee.getAvatarUrl();
+        if (avatarUrl != null && !avatarUrl.trim().isEmpty()) {
             Glide.with(context)
-                    .load(attendee.getAvatarUrl())
+                    .load(avatarUrl)
                     .placeholder(R.drawable.ic_default_avatar)
                     .error(R.drawable.ic_default_avatar)
                     .into(holder.attendeeImage);
@@ -55,13 +57,13 @@ public class AttendeesAdapter extends RecyclerView.Adapter<AttendeesAdapter.Atte
     }
 
     static class AttendeeViewHolder extends RecyclerView.ViewHolder {
-        ImageView attendeeImage;
         TextView attendeeName;
+        ImageView attendeeImage;
 
         public AttendeeViewHolder(@NonNull View itemView) {
             super(itemView);
-            attendeeImage = itemView.findViewById(R.id.attendee_image);
             attendeeName = itemView.findViewById(R.id.attendee_name);
+            attendeeImage = itemView.findViewById(R.id.attendee_image); // Make sure this ID exists in item_attendee.xml
         }
     }
 }

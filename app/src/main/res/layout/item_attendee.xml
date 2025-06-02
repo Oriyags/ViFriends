@@ -9,17 +9,16 @@
     android:elevation="2dp"
     android:layout_marginBottom="8dp">
 
-    <!-- Profile Picture -->
+    <!-- Profile Image (initially empty, loaded by Glide) -->
     <ImageView
         android:id="@+id/attendee_image"
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:scaleType="centerCrop"
-        android:src="@drawable/ic_default_avatar"
         android:background="@drawable/circle_background"
         android:contentDescription="Attendee avatar" />
 
-    <!-- Name -->
+    <!-- Attendee Username -->
     <TextView
         android:id="@+id/attendee_name"
         android:layout_width="0dp"
