@@ -27,12 +27,15 @@ import java.util.Map;
 
 public class CreateAccountActivity extends BaseActivity {
 
+    // Input fields and buttons
     private EditText etUserName, etPassword, etConfirmPassword, etEmail, etPhoneNumber, etLocation, etDOB;
-    private Button btnCreateAccount, btnCancel;
+    private Button   btnCreateAccount, btnCancel;
 
-    private FirebaseAuth auth;
+    // Firebase authentication and database
+    private FirebaseAuth      auth;
     private FirebaseFirestore db;
 
+    // Date of birth stored as milliseconds
     private long dobInMillis = 0;
 
     @Override
@@ -47,37 +50,43 @@ public class CreateAccountActivity extends BaseActivity {
             return insets;
         });
 
+        // Initialize Firebase services
         auth = FirebaseAuth.getInstance();
-        db = FirebaseFirestore.getInstance();
+        db   = FirebaseFirestore.getInstance();
 
         initializeViews();
     }
 
+    // Set up references to UI elements
     @Override
     protected void initializeViews() {
-        etUserName = findViewById(R.id.etUserName);
-        etPassword = findViewById(R.id.etPassword);
+        etUserName        = findViewById(R.id.etUserName);
+        etPassword        = findViewById(R.id.etPassword);
         etConfirmPassword = findViewById(R.id.etConfirmPassword);
-        etEmail = findViewById(R.id.etEmail);
-        etPhoneNumber = findViewById(R.id.etPhoneNumber);
-        etLocation = findViewById(R.id.etLocation);
-        etDOB = findViewById(R.id.etDOB);
-        btnCreateAccount = findViewById(R.id.btnCreateAccount);
-        btnCancel = findViewById(R.id.btnCancel);
+        etEmail           = findViewById(R.id.etEmail);
+        etPhoneNumber     = findViewById(R.id.etPhoneNumber);
+        etLocation        = findViewById(R.id.etLocation);
+        etDOB             = findViewById(R.id.etDOB);
+        btnCreateAccount  = findViewById(R.id.btnCreateAccount);
+        btnCancel         = findViewById(R.id.btnCancel);
 
         setListeners();
     }
 
+    // Set up click listeners
     @Override
     protected void setListeners() {
+        // Show a date picker when DOB field is clicked
         etDOB.setOnClickListener(v -> showDatePicker());
 
+        // Handle account creation button
         btnCreateAccount.setOnClickListener(v -> {
-            if (!validate()) return;
+            if (!validate()) return; // Check if all inputs are valid
 
-            String email = etEmail.getText().toString().trim();
+            String email    = etEmail.getText().toString().trim();
             String password = etPassword.getText().toString().trim();
 
+            // Create user with email and password
             auth.createUserWithEmailAndPassword(email, password)
                     .addOnSuccessListener(authResult -> {
                         FirebaseUser firebaseUser = auth.getCurrentUser();
@@ -86,21 +95,25 @@ public class CreateAccountActivity extends BaseActivity {
                         }
                     })
                     .addOnFailureListener(e ->
-                            Toast.makeText(this, "Registration failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                            Toast.makeText(this, "Registration failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                    );
         });
 
+        // Cancel button returns to previous screen
         btnCancel.setOnClickListener(v -> finish());
     }
 
+    // Display date picker dialog and store selected date
     private void showDatePicker() {
         Calendar calendar = Calendar.getInstance();
         new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
             calendar.set(year, month, dayOfMonth);
-            dobInMillis = calendar.getTimeInMillis();
+            dobInMillis = calendar.getTimeInMillis(); // Save selected date
             etDOB.setText(dayOfMonth + "/" + (month + 1) + "/" + year);
         }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show();
     }
 
+    // Save user profile info to Firestore
     private void saveUserProfile(String uid) {
         Map<String, Object> userProfile = new HashMap<>();
         userProfile.put("username", etUserName.getText().toString().trim());
@@ -109,9 +122,11 @@ public class CreateAccountActivity extends BaseActivity {
         userProfile.put("locationID", etLocation.getText().toString().trim());
         userProfile.put("dob", dobInMillis);
 
+        // Wrap profile under "profile" key
         Map<String, Object> wrapper = new HashMap<>();
         wrapper.put("profile", userProfile);
 
+        // Save to Firestore under "users" collection
         db.collection("users")
                 .document(uid)
                 .set(wrapper)
@@ -121,12 +136,15 @@ public class CreateAccountActivity extends BaseActivity {
                     finish();
                 })
                 .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to save user profile: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                        Toast.makeText(this, "Failed to save user profile: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                );
     }
 
+    // Not used in this activity but required by BaseActivity
     @Override
     protected void setViewModel() {}
 
+    // Validate user inputs before registration
     private boolean validate() {
         if (etUserName.getText().toString().trim().isEmpty()) {
             etUserName.setError("Username is required");
@@ -139,7 +157,7 @@ public class CreateAccountActivity extends BaseActivity {
             return false;
         }
 
-        String password = etPassword.getText().toString();
+        String password        = etPassword.getText().toString();
         String confirmPassword = etConfirmPassword.getText().toString();
 
         if (password.length() < 6) {
@@ -156,7 +174,6 @@ public class CreateAccountActivity extends BaseActivity {
             etDOB.setError("Please select a valid date of birth");
             return false;
         }
-
         return true;
     }
 }
