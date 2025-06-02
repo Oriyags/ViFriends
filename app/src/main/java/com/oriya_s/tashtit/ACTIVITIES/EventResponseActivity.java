@@ -25,13 +25,15 @@ import java.util.ArrayList;
 
 public class EventResponseActivity extends AppCompatActivity {
 
+    // Firebase and event-related variables
     private FirebaseFirestore db;
-    private String currentUserId;
-    private Event event;
+    private String            currentUserId;
+    private Event             event;
 
+    // UI components
     private ImageView eventImage;
-    private TextView eventTitle, eventDate, eventDescription;
-    private Button btnAccept, btnDecline;
+    private TextView  eventTitle, eventDate, eventDescription;
+    private Button    btnAccept, btnDecline;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -46,35 +48,42 @@ public class EventResponseActivity extends AppCompatActivity {
             return insets;
         });
 
-        db = FirebaseFirestore.getInstance();
+        // Initialize Firebase Firestore and get current user ID
+        db            = FirebaseFirestore.getInstance();
         currentUserId = FirebaseAuth.getInstance().getCurrentUser() != null ?
                 FirebaseAuth.getInstance().getCurrentUser().getUid() : null;
 
-        eventImage = findViewById(R.id.response_event_image);
-        eventTitle = findViewById(R.id.response_event_title);
-        eventDate = findViewById(R.id.response_event_date);
+        // Bind UI views to variables
+        eventImage       = findViewById(R.id.response_event_image);
+        eventTitle       = findViewById(R.id.response_event_title);
+        eventDate        = findViewById(R.id.response_event_date);
         eventDescription = findViewById(R.id.response_event_description);
-        btnAccept = findViewById(R.id.btn_accept_event);
-        btnDecline = findViewById(R.id.btn_decline_event);
+        btnAccept        = findViewById(R.id.btn_accept_event);
+        btnDecline       = findViewById(R.id.btn_decline_event);
 
+        // Get the event object passed from the previous screen
         event = (Event) getIntent().getSerializableExtra("event");
 
+        // Validate event and user ID
         if (event == null || currentUserId == null) {
             Toast.makeText(this, "Error loading event", Toast.LENGTH_SHORT).show();
-            finish();
+            finish(); // Close the activity
             return;
         }
 
+        // Prevent the event creator from responding to their own event
         if (currentUserId.equals(event.getCreatorId())) {
             Toast.makeText(this, "You cannot respond to your own event.", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
 
+        // Show event details and set up buttons
         showEventData();
         setButtonListeners();
     }
 
+    // Displays the event's title, date, description, and image (if available)
     private void showEventData() {
         eventTitle.setText(event.getName());
         eventDate.setText(event.getDate());
@@ -88,7 +97,10 @@ public class EventResponseActivity extends AppCompatActivity {
         }
     }
 
+    // Sets up the "Accept" and "Decline" button functionality
     private void setButtonListeners() {
+
+        // When "Accept" is clicked
         btnAccept.setOnClickListener(v -> {
             if (currentUserId == null) return;
 
@@ -98,6 +110,7 @@ public class EventResponseActivity extends AppCompatActivity {
                     .document(event.getId())
                     .update("acceptedUserIds", com.google.firebase.firestore.FieldValue.arrayUnion(currentUserId))
                     .addOnSuccessListener(unused -> {
+                        // Update local event object
                         if (event.getAcceptedUserIds() == null) {
                             event.setAcceptedUserIds(new ArrayList<>());
                         }
@@ -105,6 +118,7 @@ public class EventResponseActivity extends AppCompatActivity {
                             event.getAcceptedUserIds().add(currentUserId);
                         }
 
+                        // Return result back to calling activity
                         Intent resultIntent = new Intent();
                         resultIntent.putExtra("accepted", true);
                         resultIntent.putExtra("event", event);
@@ -116,6 +130,7 @@ public class EventResponseActivity extends AppCompatActivity {
                     });
         });
 
+        // When "Decline" is clicked
         btnDecline.setOnClickListener(v -> {
             if (currentUserId == null) return;
 
@@ -125,10 +140,12 @@ public class EventResponseActivity extends AppCompatActivity {
                     .document(event.getId())
                     .update("acceptedUserIds", com.google.firebase.firestore.FieldValue.arrayRemove(currentUserId))
                     .addOnSuccessListener(unused -> {
+                        // Update local event object
                         if (event.getAcceptedUserIds() != null) {
                             event.getAcceptedUserIds().remove(currentUserId);
                         }
 
+                        // Return result back to calling activity
                         Intent resultIntent = new Intent();
                         resultIntent.putExtra("accepted", false);
                         resultIntent.putExtra("event", event);
