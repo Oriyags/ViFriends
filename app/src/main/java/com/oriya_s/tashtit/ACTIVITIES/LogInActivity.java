@@ -26,15 +26,18 @@ import com.oriya_s.tashtit.R;
 
 public class LogInActivity extends BaseActivity {
 
-    private EditText etEmail, etPassword;
-    private Button btnLogin, btnRegister;
-    private ProgressBar progressBar;
+    // UI components
+    private EditText     etEmail, etPassword;
+    private Button       btnLogin, btnRegister;
+    private ProgressBar  progressBar;
     private SwitchCompat swSaveUser;
 
+    // Firebase authentication instance
     private FirebaseAuth firebaseAuth;
 
-    private static final String PREFS_NAME = "loginPrefs";
-    private static final String KEY_EMAIL = "email";
+    // SharedPreferences keys
+    private static final String PREFS_NAME   = "loginPrefs";
+    private static final String KEY_EMAIL    = "email";
     private static final String KEY_PASSWORD = "password";
     private static final String KEY_REMEMBER = "remember";
 
@@ -50,18 +53,23 @@ public class LogInActivity extends BaseActivity {
             return insets;
         });
 
+        // Initialize Firebase Auth
         firebaseAuth = FirebaseAuth.getInstance();
+
+        // Connect views and load saved login details if available
         initializeViews();
         loadPreferences();
     }
 
+    // Connects view components to their XML IDs and sets listeners
     protected void initializeViews() {
-        etEmail = findViewById(R.id.etEmail);
-        etPassword = findViewById(R.id.etPassword);
-        btnLogin = findViewById(R.id.btnLogin);
+        etEmail     = findViewById(R.id.etEmail);
+        etPassword  = findViewById(R.id.etPassword);
+        btnLogin    = findViewById(R.id.btnLogin);
         btnRegister = findViewById(R.id.btnRegister);
         progressBar = findViewById(R.id.progressBar);
-        swSaveUser = findViewById(R.id.swSaveUser);
+        swSaveUser  = findViewById(R.id.swSaveUser);
+
         setListeners();
     }
 
@@ -70,28 +78,36 @@ public class LogInActivity extends BaseActivity {
                 startActivity(new Intent(LogInActivity.this, CreateAccountActivity.class))
         );
 
+        // Attempt login
         btnLogin.setOnClickListener(v -> {
-            hideKeyboard();
-            String email = etEmail.getText().toString().trim();
+            hideKeyboard(); // Hide keyboard when user presses login
+
+            // Retrieve and trim inputs
+            String email    = etEmail.getText().toString().trim();
             String password = etPassword.getText().toString();
 
+            // Validate input fields
             if (!validateInputs(email, password)) return;
 
+            // Disable login button while processing
             btnLogin.setEnabled(false);
             progressBar.setVisibility(View.VISIBLE);
 
+            // Sign in using Firebase Authentication
             firebaseAuth.signInWithEmailAndPassword(email, password)
                     .addOnCompleteListener(task -> {
                         btnLogin.setEnabled(true);
                         progressBar.setVisibility(View.GONE);
 
                         if (task.isSuccessful()) {
+                            // Save login info if switch is checked
                             if (swSaveUser.isChecked()) {
                                 savePreferences(email, password);
                             } else {
                                 clearPreferences();
                             }
 
+                            // If login succeeded, redirect to HomeActivity
                             FirebaseUser user = firebaseAuth.getCurrentUser();
                             if (user != null) {
                                 showStyledToast("Login successful");
@@ -105,6 +121,7 @@ public class LogInActivity extends BaseActivity {
         });
     }
 
+    // Validates the entered email and password
     private boolean validateInputs(String email, String password) {
         if (email.isEmpty()) {
             etEmail.setError("Email is required");
@@ -124,6 +141,7 @@ public class LogInActivity extends BaseActivity {
         return true;
     }
 
+    // Hides the soft keyboard
     private void hideKeyboard() {
         InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
         if (getCurrentFocus() != null && imm != null) {
@@ -131,6 +149,7 @@ public class LogInActivity extends BaseActivity {
         }
     }
 
+    // Displays a custom-styled Toast message
     private void showStyledToast(String message) {
         View layout = LayoutInflater.from(this).inflate(R.layout.toast_custom, null);
         TextView textView = layout.findViewById(R.id.toastText);
@@ -142,6 +161,7 @@ public class LogInActivity extends BaseActivity {
         toast.show();
     }
 
+    // Saves email, password, and remember state to SharedPreferences
     private void savePreferences(String email, String password) {
         SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         preferences.edit()
@@ -151,6 +171,7 @@ public class LogInActivity extends BaseActivity {
                 .apply();
     }
 
+    // Loads saved preferences and autofills fields if remember switch was checked
     private void loadPreferences() {
         SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         boolean remember = preferences.getBoolean(KEY_REMEMBER, false);
@@ -161,11 +182,13 @@ public class LogInActivity extends BaseActivity {
         }
     }
 
+    // Clears saved login preferences
     private void clearPreferences() {
         SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         preferences.edit().clear().apply();
     }
 
+    // Overridden but unused in this activity
     @Override
     protected void setViewModel() {}
 }
