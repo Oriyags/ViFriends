@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.View;
 import android.widget.*;
+
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -29,18 +30,21 @@ import java.util.Map;
 
 public class UserProfileActivity extends AppCompatActivity {
 
+    // Firebase instances
     private FirebaseFirestore db;
-    private FirebaseStorage storage;
-    private FirebaseUser currentUser;
-    private String viewedUserId;
+    private FirebaseStorage   storage;
+    private FirebaseUser      currentUser;
+    private String            viewedUserId;
 
+    // UI components
     private ImageView profileImage;
-    private EditText etUsername, etBio, etCity, etPhone, etDOB;
-    private TextView tvAge;
-    private Button btnSaveChanges;
-    private Uri selectedImageUri;
-    private long dobMillis = 0;
+    private EditText  etUsername, etBio, etCity, etPhone, etDOB;
+    private TextView  tvAge;
+    private Button    btnSaveChanges;
+    private Uri       selectedImageUri;
+    private long      dobMillis = 0;
 
+    // Image picker launcher
     private ActivityResultLauncher<Intent> imagePickerLauncher;
 
     @Override
@@ -55,29 +59,34 @@ public class UserProfileActivity extends AppCompatActivity {
             return insets;
         });
 
-        db = FirebaseFirestore.getInstance();
-        storage = FirebaseStorage.getInstance();
+        // Initialize Firebase
+        db          = FirebaseFirestore.getInstance();
+        storage     = FirebaseStorage.getInstance();
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
+        // Get the user ID to display — defaults to current user if not provided
         viewedUserId = getIntent().getStringExtra("userId");
         if (viewedUserId == null || viewedUserId.isEmpty()) {
             viewedUserId = currentUser != null ? currentUser.getUid() : null;
         }
 
+        // Setup views and listeners
         initializeViews();
         loadUserData();
     }
 
+    // Binds views and sets click listeners
     private void initializeViews() {
-        profileImage = findViewById(R.id.profile_image);
-        etUsername = findViewById(R.id.et_username);
-        etCity = findViewById(R.id.tv_city);
-        etPhone = findViewById(R.id.tv_phone);
-        etDOB = findViewById(R.id.tv_dob);
-        tvAge = findViewById(R.id.tv_age);
-        etBio = findViewById(R.id.et_bio);
+        profileImage   = findViewById(R.id.profile_image);
+        etUsername     = findViewById(R.id.et_username);
+        etCity         = findViewById(R.id.tv_city);
+        etPhone        = findViewById(R.id.tv_phone);
+        etDOB          = findViewById(R.id.tv_dob);
+        tvAge          = findViewById(R.id.tv_age);
+        etBio          = findViewById(R.id.et_bio);
         btnSaveChanges = findViewById(R.id.btn_save_changes);
 
+        // Sets up launcher to handle image selection result
         imagePickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
@@ -85,7 +94,7 @@ public class UserProfileActivity extends AppCompatActivity {
                         selectedImageUri = result.getData().getData();
                         if (selectedImageUri != null) {
                             Glide.with(this).load(selectedImageUri).into(profileImage);
-                            uploadProfileImage(selectedImageUri);
+                            uploadProfileImage(selectedImageUri); // Uploads image to Firebase
                         }
                     }
                 });
@@ -95,6 +104,7 @@ public class UserProfileActivity extends AppCompatActivity {
         btnSaveChanges.setOnClickListener(v -> saveProfileChanges());
     }
 
+    // Loads user data from Firestore and populates the fields
     private void loadUserData() {
         if (viewedUserId == null) return;
 
@@ -124,6 +134,7 @@ public class UserProfileActivity extends AppCompatActivity {
                             Glide.with(this).load(profileImageUrl).into(profileImage);
                         }
 
+                        // If viewing someone else's profile — disable editing
                         if (!viewedUserId.equals(currentUser.getUid())) {
                             disableEditing();
                         }
@@ -131,6 +142,7 @@ public class UserProfileActivity extends AppCompatActivity {
                 });
     }
 
+    // Disables all editing features when not viewing own profile
     private void disableEditing() {
         etUsername.setEnabled(false);
         etBio.setEnabled(false);
@@ -141,6 +153,7 @@ public class UserProfileActivity extends AppCompatActivity {
         btnSaveChanges.setVisibility(View.GONE);
     }
 
+    // Opens a date picker dialog to set date of birth
     private void showDatePicker() {
         Calendar calendar = Calendar.getInstance();
         new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
@@ -151,6 +164,7 @@ public class UserProfileActivity extends AppCompatActivity {
         }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show();
     }
 
+    // Saves all changed fields to Firestore
     private void saveProfileChanges() {
         if (currentUser == null || !currentUser.getUid().equals(viewedUserId)) return;
 
@@ -170,12 +184,14 @@ public class UserProfileActivity extends AppCompatActivity {
                         Toast.makeText(this, "Update failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
+    // Opens image picker for profile picture
     private void openImagePicker() {
         if (currentUser == null || !currentUser.getUid().equals(viewedUserId)) return;
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         imagePickerLauncher.launch(intent);
     }
 
+    // Uploads selected profile image to Firebase Storage
     private void uploadProfileImage(Uri imageUri) {
         if (currentUser == null || imageUri == null || !currentUser.getUid().equals(viewedUserId)) return;
 
@@ -190,6 +206,7 @@ public class UserProfileActivity extends AppCompatActivity {
                 }));
     }
 
+    // Formats a date in dd/MM/yyyy from milliseconds
     private String formatDate(long millis) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(millis);
@@ -198,6 +215,7 @@ public class UserProfileActivity extends AppCompatActivity {
                 calendar.get(Calendar.YEAR);
     }
 
+    // Calculates age in years from date of birth
     private int calculateAge(long dobMillis) {
         Calendar dob = Calendar.getInstance();
         dob.setTimeInMillis(dobMillis);
