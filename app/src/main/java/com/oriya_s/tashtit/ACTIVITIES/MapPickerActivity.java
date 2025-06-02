@@ -18,18 +18,19 @@ import java.util.List;
 
 public class MapPickerActivity extends AppCompatActivity {
 
+    // Request code to identify the autocomplete result
     private static final int AUTOCOMPLETE_REQUEST_CODE = 1;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Initialize Places SDK if not already done
+        // Initialize the Google Places SDK if it hasn't been initialized yet
         if (!Places.isInitialized()) {
             Places.initialize(getApplicationContext(), getString(R.string.google_maps_key));
         }
 
-        // Fields to retrieve
+        // Specify the fields from the selected place (ID, Name, Coordinates, Address)
         List<Place.Field> fields = Arrays.asList(
                 Place.Field.ID,
                 Place.Field.NAME,
@@ -37,25 +38,35 @@ public class MapPickerActivity extends AppCompatActivity {
                 Place.Field.ADDRESS
         );
 
-        // Start the autocomplete intent
+        // Build and launch the autocomplete activity in fullscreen mode
         Intent intent = new Autocomplete.IntentBuilder(
                 AutocompleteActivityMode.FULLSCREEN, fields)
                 .build(this);
+
+        // Start the autocomplete activity for result
         startActivityForResult(intent, AUTOCOMPLETE_REQUEST_CODE);
     }
 
+    // Handle the result of the autocomplete place selection
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
+        // Check if the result is from the autocomplete request
         if (requestCode == AUTOCOMPLETE_REQUEST_CODE) {
             if (resultCode == RESULT_OK && data != null) {
+                // Get the selected place from the returned data
                 Place place = Autocomplete.getPlaceFromIntent(data);
+
+                // Ensure the location has coordinates
                 if (place.getLatLng() != null) {
+                    // Prepare an intent with the selected location details
                     Intent resultIntent = new Intent();
                     resultIntent.putExtra("lat", place.getLatLng().latitude);
                     resultIntent.putExtra("lng", place.getLatLng().longitude);
                     resultIntent.putExtra("address", place.getAddress());
+
+                    // Return the result to the calling activity
                     setResult(RESULT_OK, resultIntent);
                     finish();
                 }
