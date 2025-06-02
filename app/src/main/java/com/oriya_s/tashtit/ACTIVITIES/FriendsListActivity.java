@@ -28,50 +28,63 @@ import java.util.Map;
 
 public class FriendsListActivity extends AppCompatActivity {
 
+    // UI components
     private RecyclerView friendsRecyclerView;
-    private ImageButton btnAddFriend;
-    private Button btnPendingRequests;
-    private FriendsListAdapter adapter;
-    private ArrayList<Friend> friends;
+    private ImageButton  btnAddFriend;
+    private Button       btnPendingRequests;
 
+    // Adapter and data list
+    private FriendsListAdapter adapter;
+    private ArrayList<Friend>  friends;
+
+    // Firebase services
     private FirebaseFirestore db;
-    private FirebaseUser currentUser;
+    private FirebaseUser      currentUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_friends_list);
 
-        db = FirebaseFirestore.getInstance();
+        // Firebase instances
+        db          = FirebaseFirestore.getInstance();
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
+        // Initialize UI components
         friendsRecyclerView = findViewById(R.id.recycler_friends);
-        btnAddFriend = findViewById(R.id.btn_add_friend);
-        btnPendingRequests = findViewById(R.id.btn_pending_requests);
+        btnAddFriend        = findViewById(R.id.btn_add_friend);
+        btnPendingRequests  = findViewById(R.id.btn_pending_requests);
 
+        // Setup RecyclerView with adapter
         friends = new ArrayList<>();
         adapter = new FriendsListAdapter(this, friends, db, currentUser);
         friendsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         friendsRecyclerView.setAdapter(adapter);
 
+        // Handle click events on friend list items
         adapter.setOnFriendClickListener(this::showFriendOptions);
 
+        // Update result when a friend is removed
         adapter.setOnFriendRemovedListener(() -> {
             Intent resultIntent = new Intent();
             resultIntent.putExtra("updatedFriendCount", friends.size());
             setResult(RESULT_OK, resultIntent);
         });
 
+        // Search for a new friend
         btnAddFriend.setOnClickListener(v -> showSearchDialog());
 
+        // View pending friend requests
         btnPendingRequests.setOnClickListener(v -> {
             Intent intent = new Intent(FriendsListActivity.this, PendingRequestsActivity.class);
             startActivity(intent);
         });
 
+        // Load accepted friends from Firestore
         loadFriends();
     }
 
+    // Show an input dialog to search for a friend by username
     private void showSearchDialog() {
         EditText input = new EditText(this);
         input.setInputType(InputType.TYPE_CLASS_TEXT);
@@ -85,6 +98,7 @@ public class FriendsListActivity extends AppCompatActivity {
                 .show();
     }
 
+    // Search Firestore for a user by their username
     private void searchUserByUsername(String username) {
         if (currentUser == null || username.isEmpty()) return;
 
@@ -100,6 +114,7 @@ public class FriendsListActivity extends AppCompatActivity {
                             return;
                         }
 
+                        // Check if request already exists
                         db.collection("users").document(receiverId)
                                 .collection("friends").document(currentUser.getUid())
                                 .get()
@@ -107,6 +122,7 @@ public class FriendsListActivity extends AppCompatActivity {
                                     if (existing.exists()) {
                                         Toast.makeText(this, "Friend request already sent", Toast.LENGTH_SHORT).show();
                                     } else {
+                                        // Fetch current user profile info
                                         db.collection("users")
                                                 .document(currentUser.getUid())
                                                 .get()
@@ -114,6 +130,7 @@ public class FriendsListActivity extends AppCompatActivity {
                                                     String senderName = currentDoc.get("profile.username", String.class);
                                                     String senderAvatar = currentDoc.get("profile.profileImageUrl", String.class);
 
+                                                    // Send request to the receiver
                                                     Friend sentRequest = new Friend(
                                                             currentUser.getUid(),
                                                             senderName,
@@ -131,6 +148,7 @@ public class FriendsListActivity extends AppCompatActivity {
                                                                     Toast.makeText(this, "Friend request sent", Toast.LENGTH_SHORT).show()
                                                             );
 
+                                                    // Save placeholder for receiver in sender's list
                                                     String receiverAvatar = query.getDocuments().get(0).get("profile.profileImageUrl", String.class);
 
                                                     Friend placeholder = new Friend(
@@ -157,6 +175,7 @@ public class FriendsListActivity extends AppCompatActivity {
                         Toast.makeText(this, "Error searching user", Toast.LENGTH_SHORT).show());
     }
 
+    // Load accepted friends from Firestore and update the RecyclerView
     private void loadFriends() {
         if (currentUser == null) return;
 
@@ -181,8 +200,8 @@ public class FriendsListActivity extends AppCompatActivity {
                                         String friendName = profile != null ? (String) profile.get("username") : "Unknown";
                                         String avatarUrl = profile != null ? (String) profile.get("profileImageUrl") : null;
 
-                                        f.setName(friendName); // ✅ Update the name
-                                        f.setAvatarUrl(avatarUrl); // ✅ Optional: update avatar
+                                        f.setName(friendName);
+                                        f.setAvatarUrl(avatarUrl);
 
                                         boolean exists = false;
                                         for (Friend existing : friends) {
@@ -197,6 +216,7 @@ public class FriendsListActivity extends AppCompatActivity {
                                             runOnUiThread(() -> adapter.notifyDataSetChanged());
                                         }
                                     } else {
+                                        // Friend was deleted, remove from current user's list
                                         db.collection("users")
                                                 .document(currentUser.getUid())
                                                 .collection("friends")
@@ -208,6 +228,7 @@ public class FriendsListActivity extends AppCompatActivity {
                 });
     }
 
+    // Show popup menu with options when clicking a friend
     private void showFriendOptions(View anchorView, Friend friend) {
         PopupMenu popup = new PopupMenu(this, anchorView);
         popup.getMenu().add("View Profile");
