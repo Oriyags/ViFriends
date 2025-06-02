@@ -259,7 +259,7 @@ public class AddEventActivity extends AppCompatActivity {
                     if (creatorName == null || creatorName.isEmpty()) {
                         creatorName = currentUser.getEmail();
                     }
-                    String creatorAvatar = snapshot.getString("profile.avatarUrl");
+                    String creatorAvatar = snapshot.getString("profile.profileImageUrl");
 
                     // Create map with event data
                     Map<String, Object> eventMap = new HashMap<>();

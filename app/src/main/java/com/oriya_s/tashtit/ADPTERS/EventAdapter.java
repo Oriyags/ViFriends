@@ -26,6 +26,7 @@ import com.oriya_s.tashtit.R;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHolder> {
     private final Context context;
@@ -66,12 +67,33 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         }
 
         holder.eventAuthorImage.setVisibility(View.VISIBLE);
-        if (event.getCreatorAvatar() != null && !event.getCreatorAvatar().isEmpty()) {
-            Glide.with(context)
-                    .load(event.getCreatorAvatar())
-                    .placeholder(R.drawable.ic_default_avatar)
-                    .error(R.drawable.ic_default_avatar)
-                    .into(holder.eventAuthorImage);
+
+        // Load profile image from Firestore
+        if (event.getCreatorId() != null && !event.getCreatorId().isEmpty()) {
+            db.collection("users")
+                    .document(event.getCreatorId())
+                    .get()
+                    .addOnSuccessListener(snapshot -> {
+                        if (snapshot.exists() && snapshot.contains("profile")) {
+                            Map<String, Object> profile = (Map<String, Object>) snapshot.get("profile");
+                            String avatarUrl = profile.get("profileImageUrl") != null
+                                    ? profile.get("profileImageUrl").toString()
+                                    : null;
+
+                            if (avatarUrl != null && !avatarUrl.trim().isEmpty() && !avatarUrl.equals("null")) {
+                                Glide.with(context)
+                                        .load(avatarUrl)
+                                        .placeholder(R.drawable.ic_default_avatar)
+                                        .error(R.drawable.ic_default_avatar)
+                                        .into(holder.eventAuthorImage);
+                            } else {
+                                holder.eventAuthorImage.setImageResource(R.drawable.ic_default_avatar);
+                            }
+                        } else {
+                            holder.eventAuthorImage.setImageResource(R.drawable.ic_default_avatar);
+                        }
+                    })
+                    .addOnFailureListener(e -> holder.eventAuthorImage.setImageResource(R.drawable.ic_default_avatar));
         } else {
             holder.eventAuthorImage.setImageResource(R.drawable.ic_default_avatar);
         }
@@ -118,14 +140,12 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             holder.deleteButton.setVisibility(View.GONE);
         }
 
-        // Friends button
         holder.btnFriends.setOnClickListener(v -> {
             Intent intent = new Intent(context, AttendeesActivity.class);
             intent.putExtra("event", event);
             context.startActivity(intent);
         });
 
-        // Video button
         if (event.getVideoUri() != null && !event.getVideoUri().isEmpty()) {
             holder.btnVideo.setVisibility(View.VISIBLE);
             holder.btnVideo.setOnClickListener(v -> {
@@ -137,7 +157,6 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             holder.btnVideo.setVisibility(View.GONE);
         }
 
-        // Map button
         if (event.getLatitude() != 0 && event.getLongitude() != 0) {
             holder.btnMap.setVisibility(View.VISIBLE);
             holder.btnMap.setOnClickListener(v -> {
@@ -150,7 +169,6 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             holder.btnMap.setVisibility(View.GONE);
         }
 
-        // Event click: for non-creator users, open EventResponseActivity
         holder.itemView.setOnClickListener(v -> {
             if (currentUser != null && !currentUser.getUid().equals(event.getCreatorId())) {
                 Intent intent = new Intent(context, EventResponseActivity.class);
@@ -183,7 +201,6 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             eventImage = itemView.findViewById(R.id.event_image_preview);
             eventLocationInfo = itemView.findViewById(R.id.event_location_info);
             deleteButton = itemView.findViewById(R.id.event_delete_button);
-
             btnFriends = itemView.findViewById(R.id.event_btn_friends);
             btnVideo = itemView.findViewById(R.id.event_btn_video);
             btnMap = itemView.findViewById(R.id.event_btn_map);
