@@ -20,18 +20,22 @@ import java.util.Locale;
 public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageViewHolder> {
 
     private final List<Message> messageList;
-    private final String currentUserId;
+    // ID of the current user (used to check if a message is sent or received)
+    private final String        currentUserId;
 
+    // Constructor
     public MessageAdapter(List<Message> messageList) {
-        this.messageList = messageList;
+        this.messageList   = messageList;
         this.currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
     }
 
+    // Determines the type of view for each message (sent = 1, received = 0)
     @Override
     public int getItemViewType(int position) {
         return messageList.get(position).getSenderID().equals(currentUserId) ? 1 : 0;
     }
 
+    // Inflates the appropriate layout (sent or received) based on view type
     @NonNull
     @Override
     public MessageViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -40,12 +44,13 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         return new MessageViewHolder(view);
     }
 
+    // Binds each message's text and formatted time to the views
     @Override
     public void onBindViewHolder(@NonNull MessageViewHolder holder, int position) {
         Message msg = messageList.get(position);
         holder.messageText.setText(msg.getText());
 
-        // Format timestamp
+        // Format timestamp to "HH:mm" format (e.g., "14:23")
         long timestamp = msg.getTimestamp();
         String timeFormatted = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(timestamp));
         holder.messageTime.setText(timeFormatted);
@@ -56,6 +61,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         return messageList.size();
     }
 
+    // ViewHolder class holds references to the views in each message item layout
     static class MessageViewHolder extends RecyclerView.ViewHolder {
         TextView messageText, messageTime;
 
