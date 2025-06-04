@@ -18,59 +18,60 @@ import java.util.List;
 
 public class MapPickerActivity extends AppCompatActivity {
 
-    // Request code to identify the autocomplete result
+    // Request code to identify which result is returned in onActivityResult
     private static final int AUTOCOMPLETE_REQUEST_CODE = 1;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Initialize the Google Places SDK if it hasn't been initialized yet
+        // Initialize the Google Places SDK with your API key (if not already initialized)
         if (!Places.isInitialized()) {
             Places.initialize(getApplicationContext(), getString(R.string.google_maps_key));
         }
 
-        // Specify the fields from the selected place (ID, Name, Coordinates, Address)
+        // Define the fields you want to retrieve from the selected place
         List<Place.Field> fields = Arrays.asList(
                 Place.Field.ID,
                 Place.Field.NAME,
-                Place.Field.LAT_LNG,
-                Place.Field.ADDRESS
+                Place.Field.LAT_LNG,    // Required to get coordinates
+                Place.Field.ADDRESS     // Human-readable address
         );
 
-        // Build and launch the autocomplete activity in fullscreen mode
+        // Create an intent to launch the Google Places Autocomplete UI
         Intent intent = new Autocomplete.IntentBuilder(
-                AutocompleteActivityMode.FULLSCREEN, fields)
-                .build(this);
+                AutocompleteActivityMode.FULLSCREEN,
+                fields
+        ).build(this);
 
-        // Start the autocomplete activity for result
         startActivityForResult(intent, AUTOCOMPLETE_REQUEST_CODE);
     }
 
-    // Handle the result of the autocomplete place selection
+    // Handle the result returned by the Autocomplete activity
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        // Check if the result is from the autocomplete request
+        // Ensure handling the correct request
         if (requestCode == AUTOCOMPLETE_REQUEST_CODE) {
             if (resultCode == RESULT_OK && data != null) {
-                // Get the selected place from the returned data
+                // Get the selected place from the intent
                 Place place = Autocomplete.getPlaceFromIntent(data);
 
-                // Ensure the location has coordinates
+                // Make sure coordinates exist before continuing
                 if (place.getLatLng() != null) {
-                    // Prepare an intent with the selected location details
+                    // Create a new intent to send back the result
                     Intent resultIntent = new Intent();
                     resultIntent.putExtra("lat", place.getLatLng().latitude);
                     resultIntent.putExtra("lng", place.getLatLng().longitude);
                     resultIntent.putExtra("address", place.getAddress());
 
-                    // Return the result to the calling activity
+                    // Return the location info back to the calling activity
                     setResult(RESULT_OK, resultIntent);
                     finish();
                 }
             } else {
+                // User canceled or no place selected
                 Toast.makeText(this, "No location selected", Toast.LENGTH_SHORT).show();
                 finish();
             }
