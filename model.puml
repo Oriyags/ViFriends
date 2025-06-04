@@ -1,0 +1,459 @@
+@startuml
+class ChatActivity {
+- FirebaseUser currentUser
+- FirebaseFirestore db
+- RecyclerView recyclerView
+- EditText inputMessage
+- ImageButton btnSend
+- MessageAdapter adapter
+- List<Message> messageList
+- String otherUserId
+- String chatId
+- LinearLayout chatHeader
+- ImageView ivUserAvatar
+- TextView tvUserName
+# void onCreate(Bundle)
+- void loadOtherUserProfile()
+- void createOrLoadChat()
+- void loadMessages()
+- void sendMessage()
+}
+
+
+class SettingsActivity {
+- Button btnToggleTheme
+- FirebaseAuth auth
+- FirebaseFirestore db
+- FirebaseStorage storage
+- FirebaseUser currentUser
+# void onCreate(Bundle)
+- void toggleTheme()
+- void showAboutDialog()
+- void confirmDeleteAccount()
+- void deleteAccount()
+- void deleteSubcollection(String,String,String)
+- void inviteFriend()
+- void removeUserFromAllEvents(String)
+}
+
+
+class HomeActivity {
+- {static} int ADD_EVENT_REQUEST
+- {static} int FRIENDS_REQUEST_CODE
+- {static} int EVENT_RESPONSE_REQUEST
+- ImageButton menuButton
+- Button btnViewFriends
+- TextView friendsSummaryText
+- DrawerLayout drawerLayout
+- NavigationView navigationView
+- RecyclerView eventListView
+- ArrayList<Event> eventList
+- EventAdapter adapter
+- FirebaseUser currentUser
+- FirebaseFirestore firestore
+- ListenerRegistration eventListener
+# void onCreate(Bundle)
+- void initializeViews()
+- void setListeners()
+- boolean handleDrawerItemClick(MenuItem)
+- void loadEventsFromFirebase()
+- void loadFriendsCount()
+- void updateFriendCountText(int)
+# void onResume()
+# void onActivityResult(int,int,Intent)
++ void deleteEvent(Event,int)
+# void onDestroy()
+}
+
+
+class SwipeConfig {
++ int leftBackgroundColor
++ String leftText
++ int textLeftColor
++ int leftIconResId
++ int rightBackgroundColor
++ String rightText
++ int texRightColor
++ int rightIconResId
++ float textSize
++ float iconSizeRatio
++ float iconMarginRatio
+}
+
+class AddEventActivity {
+- EditText eventNameInput
+- Button pickDateButton
+- TextView dateText
+- RadioGroup visibilityGroup
+- ImageView selectedImage
+- Uri imageUri
+- Uri videoUri
+- String imageDownloadUrl
+- String videoDownloadUrl
+- FirebaseFirestore db
+- FirebaseAuth auth
+- FirebaseStorage storage
+- FirebaseUser currentUser
+- ActivityResultLauncher<Intent> imagePickerLauncher
+- ActivityResultLauncher<Intent> videoPickerLauncher
+- List<Friend> allFriends
+- List<String> selectedFriendIds
+- String selectedVisibility
+# void onCreate(Bundle)
+- void fetchFriends(Runnable)
+- void initializePickers()
+- void setListeners()
+- void showDatePicker()
+- void showFriendSelectionDialog()
+- void pickImageFromGallery()
+- void pickVideoFromGallery()
+- void uploadMediaAndSaveEvent()
+- void uploadImage()
+- void uploadVideo()
+- void saveEvent()
+# void onDestroy()
+}
+
+
+class EventResponseActivity {
+- FirebaseFirestore db
+- String currentUserId
+- Event event
+- ImageView eventImage
+- TextView eventTitle
+- Button btnAccept
+# void onCreate(Bundle)
+- void showEventData()
+- void setButtonListeners()
+}
+
+
+class SwipeCallback {
+- GenericAdapter<T> adapter
+- Paint paint
+- Context context
+- Drawable leftIcon
+- Drawable rightIcon
+- int swipeDirs
+- SwipeConfig config
++ <<Create>> SwipeCallback(GenericAdapter<T>,Context,SwipeConfig)
++ <<Create>> SwipeCallback(GenericAdapter<T>,Context,SwipeConfig,int)
++ int getSwipeDirs(RecyclerView,RecyclerView.ViewHolder)
++ boolean onMove(RecyclerView,RecyclerView.ViewHolder,RecyclerView.ViewHolder)
++ void onSwiped(RecyclerView.ViewHolder,int)
++ void onChildDraw(Canvas,RecyclerView,RecyclerView.ViewHolder,float,float,int,boolean)
+}
+
+
+class VideoActivity {
+# void onCreate(Bundle)
+# void initializeViews()
+- void startVideo()
+# void setViewModel()
+}
+
+abstract class BaseActivity {
++ ProgressDialog mProgressDialog
+# void onCreate(Bundle)
+# {abstract}void initializeViews()
+# {abstract}void setListeners()
+# {abstract}void setViewModel()
++ void showProgressDialog(String,String)
++ void hideProgressDialog()
+}
+
+
+class FriendsListAdapter {
+- List<Friend> friends
+- Context context
+- FirebaseFirestore db
+- FirebaseUser currentUser
+- OnFriendClickListener clickListener
+- OnFriendRemovedListener removeListener
++ <<Create>> FriendsListAdapter(Context,List<Friend>,FirebaseFirestore,FirebaseUser)
++ void setOnFriendClickListener(OnFriendClickListener)
++ void setOnFriendRemovedListener(OnFriendRemovedListener)
++ FriendViewHolder onCreateViewHolder(ViewGroup,int)
++ void onBindViewHolder(FriendViewHolder,int)
+- void removeFriend(int,Friend)
++ int getItemCount()
+}
+
+
+interface FriendsListAdapter$OnFriendClickListener {
+}
+interface FriendsListAdapter$OnFriendRemovedListener {
+}
+class FriendsListAdapter$FriendViewHolder {
++ <<Create>> FriendViewHolder(View)
+}
+
+class PendingRequestsAdapter {
+- List<Friend> requests
+- Context context
+- FirebaseFirestore db
+- FirebaseUser currentUser
++ <<Create>> PendingRequestsAdapter(Context,List<Friend>,FirebaseFirestore,FirebaseUser)
++ RequestViewHolder onCreateViewHolder(ViewGroup,int)
++ void onBindViewHolder(RequestViewHolder,int)
+- void acceptRequest(Friend,int)
+- void declineRequest(Friend,int)
++ int getItemCount()
+}
+
+
+class PendingRequestsAdapter$RequestViewHolder {
++ <<Create>> RequestViewHolder(View)
+}
+
+class ChatListActivity {
+- RecyclerView recyclerView
+- FriendsListAdapter adapter
+- List<Friend> chatPreviews
+- FirebaseUser currentUser
+- FirebaseFirestore db
+# void onCreate(Bundle)
+- void loadChatList()
+}
+
+
+class LogInActivity {
+- EditText etEmail
+- Button btnLogin
+- ProgressBar progressBar
+- SwitchCompat swSaveUser
+- FirebaseAuth firebaseAuth
+- {static} String PREFS_NAME
+- {static} String KEY_EMAIL
+- {static} String KEY_PASSWORD
+- {static} String KEY_REMEMBER
+# void onCreate(Bundle)
+# void initializeViews()
+# void setListeners()
+- boolean validateInputs(String,String)
+- void hideKeyboard()
+- void showStyledToast(String)
+- void savePreferences(String,String)
+- void loadPreferences()
+- void clearPreferences()
+# void setViewModel()
+}
+
+
+class MainActivity {
+# void onCreate(Bundle)
+# void initializeViews()
+# void setListeners()
+# void setViewModel()
+}
+
+class UserProfileActivity {
+- FirebaseFirestore db
+- FirebaseStorage storage
+- FirebaseUser currentUser
+- String viewedUserId
+- ImageView profileImage
+- EditText etUsername
+- TextView tvAge
+- Button btnSaveChanges
+- Uri selectedImageUri
+- long dobMillis
+- ActivityResultLauncher<Intent> imagePickerLauncher
+# void onCreate(Bundle)
+- void initializeViews()
+- void loadUserData()
+- void disableEditing()
+- void showDatePicker()
+- void saveProfileChanges()
+- void openImagePicker()
+- void uploadProfileImage(Uri)
+- String formatDate(long)
+- int calculateAge(long)
+}
+
+
+class AttendeesActivity {
+- RecyclerView recyclerView
+- AttendeesAdapter adapter
+- List<UserProfile> attendees
+- FirebaseFirestore db
+- Event event
+# void onCreate(Bundle)
+- void loadAttendeeProfiles()
+}
+
+
+class CreateAccountActivity {
+- EditText etUserName
+- Button btnCreateAccount
+- FirebaseAuth auth
+- FirebaseFirestore db
+- long dobInMillis
+# void onCreate(Bundle)
+# void initializeViews()
+# void setListeners()
+- void showDatePicker()
+- void saveUserProfile(String)
+# void setViewModel()
+- boolean validate()
+}
+
+
+class Xadapter {
+}
+class MessageAdapter {
+- List<Message> messageList
+- String currentUserId
++ <<Create>> MessageAdapter(List<Message>)
++ int getItemViewType(int)
++ MessageViewHolder onCreateViewHolder(ViewGroup,int)
++ void onBindViewHolder(MessageViewHolder,int)
++ int getItemCount()
+}
+
+
+class MessageAdapter$MessageViewHolder {
++ <<Create>> MessageViewHolder(View)
+}
+
+class GenericAdapter {
+- List<T> items
+- int layoutId
+- BindViewHolder<T> bindViewHolder
+- InitializeViewHolder initializeViewHolder
+- OnItemClickListener<T> clickListener
+- OnItemLongClickListener<T> longClickListener
+- OnItemSwipeListener<T> swipeListener
++ <<Create>> GenericAdapter(List<T>,int,InitializeViewHolder,BindViewHolder<T>)
++ void setOnItemClickListener(OnItemClickListener<T>)
++ void setOnItemLongClickListener(OnItemLongClickListener<T>)
++ void setOnItemSwipeListener(OnItemSwipeListener<T>)
++ OnItemSwipeListener<T> getSwipeListener()
++ GenericViewHolder onCreateViewHolder(ViewGroup,int)
++ void onBindViewHolder(GenericViewHolder,int)
++ int getItemCount()
++ void setItems(List<T>)
++ List<T> getItems()
++ T getItem(int)
+}
+
+
+interface GenericAdapter$OnItemSwipeListener {
+}
+class GenericAdapter$GenericViewHolder {
+- Map<String,View> views
++ <<Create>> GenericViewHolder(View)
++ void putView(String,View)
++ V getView(String)
+}
+
+
+interface GenericAdapter$InitializeViewHolder {
+}
+interface GenericAdapter$BindViewHolder {
+}
+interface GenericAdapter$OnItemClickListener {
+}
+interface GenericAdapter$OnItemLongClickListener {
+}
+class FriendsListActivity {
+- RecyclerView friendsRecyclerView
+- ImageButton btnAddFriend
+- Button btnPendingRequests
+- FriendsListAdapter adapter
+- ArrayList<Friend> friends
+- FirebaseFirestore db
+- FirebaseUser currentUser
+# void onCreate(Bundle)
+- void showSearchDialog()
+- void searchUserByUsername(String)
+- void loadFriends()
+- void showFriendOptions(View,Friend)
+}
+
+
+class EventAdapter {
+- Context context
+- ArrayList<Event> eventList
+- FirebaseUser currentUser
+- FirebaseFirestore db
++ <<Create>> EventAdapter(Context,ArrayList<Event>)
++ EventViewHolder onCreateViewHolder(ViewGroup,int)
++ void onBindViewHolder(EventViewHolder,int)
++ int getItemCount()
+}
+
+
+class EventAdapter$EventViewHolder {
++ <<Create>> EventViewHolder(View)
+}
+
+class PendingRequestsActivity {
+- RecyclerView pendingRequestsRecyclerView
+- PendingRequestsAdapter adapter
+- ArrayList<Friend> pendingRequests
+- FirebaseFirestore db
+- FirebaseUser currentUser
+# void onCreate(Bundle)
+- void loadPendingRequests()
+}
+
+
+class AttendeesAdapter {
+- List<UserProfile> attendees
+- Context context
++ <<Create>> AttendeesAdapter(Context,List<UserProfile>)
++ AttendeeViewHolder onCreateViewHolder(ViewGroup,int)
++ void onBindViewHolder(AttendeeViewHolder,int)
++ int getItemCount()
+}
+
+
+class AttendeesAdapter$AttendeeViewHolder {
++ <<Create>> AttendeeViewHolder(View)
+}
+
+
+
+AppCompatActivity <|-- ChatActivity
+AppCompatActivity <|-- SettingsActivity
+AppCompatActivity <|-- HomeActivity
+AppCompatActivity <|-- AddEventActivity
+AppCompatActivity <|-- EventResponseActivity
+SimpleCallback <|-- SwipeCallback
+AppCompatActivity <|-- VideoActivity
+AppCompatActivity <|-- BaseActivity
+Adapter <|-- FriendsListAdapter
+FriendsListAdapter +.. FriendsListAdapter$OnFriendClickListener
+FriendsListAdapter +.. FriendsListAdapter$OnFriendRemovedListener
+FriendsListAdapter +.. FriendsListAdapter$FriendViewHolder
+ViewHolder <|-- FriendsListAdapter$FriendViewHolder
+Adapter <|-- PendingRequestsAdapter
+PendingRequestsAdapter +.. PendingRequestsAdapter$RequestViewHolder
+ViewHolder <|-- PendingRequestsAdapter$RequestViewHolder
+AppCompatActivity <|-- ChatListActivity
+BaseActivity <|-- LogInActivity
+BaseActivity <|-- MainActivity
+AppCompatActivity <|-- UserProfileActivity
+AppCompatActivity <|-- AttendeesActivity
+BaseActivity <|-- CreateAccountActivity
+Adapter <|-- MessageAdapter
+MessageAdapter +.. MessageAdapter$MessageViewHolder
+ViewHolder <|-- MessageAdapter$MessageViewHolder
+Adapter <|-- GenericAdapter
+GenericAdapter +.. GenericAdapter$OnItemSwipeListener
+GenericAdapter +.. GenericAdapter$GenericViewHolder
+ViewHolder <|-- GenericAdapter$GenericViewHolder
+GenericAdapter +.. GenericAdapter$InitializeViewHolder
+GenericAdapter +.. GenericAdapter$BindViewHolder
+GenericAdapter +.. GenericAdapter$OnItemClickListener
+GenericAdapter +.. GenericAdapter$OnItemLongClickListener
+AppCompatActivity <|-- FriendsListActivity
+Adapter <|-- EventAdapter
+EventAdapter +.. EventAdapter$EventViewHolder
+ViewHolder <|-- EventAdapter$EventViewHolder
+AppCompatActivity <|-- PendingRequestsActivity
+Adapter <|-- AttendeesAdapter
+AttendeesAdapter +.. AttendeesAdapter$AttendeeViewHolder
+ViewHolder <|-- AttendeesAdapter$AttendeeViewHolder
+@enduml
