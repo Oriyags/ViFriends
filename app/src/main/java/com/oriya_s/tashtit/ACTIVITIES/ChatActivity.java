@@ -9,7 +9,6 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -37,21 +36,22 @@ import java.util.Map;
 
 public class ChatActivity extends AppCompatActivity {
 
-    private FirebaseUser currentUser;
+    // Firebase and UI variables
+    private FirebaseUser      currentUser;
     private FirebaseFirestore db;
 
-    private RecyclerView recyclerView;
-    private EditText inputMessage;
-    private ImageButton btnSend;
+    private RecyclerView   recyclerView;
+    private EditText       inputMessage;
+    private ImageButton    btnSend;
     private MessageAdapter adapter;
-    private List<Message> messageList;
+    private List<Message>  messageList;
 
     private String otherUserId;
     private String chatId;
 
     private LinearLayout chatHeader;
-    private ImageView ivUserAvatar;
-    private TextView tvUserName;
+    private ImageView    ivUserAvatar;
+    private TextView     tvUserName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,32 +65,39 @@ public class ChatActivity extends AppCompatActivity {
             return insets;
         });
 
+        // Initialize Firebase
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        db = FirebaseFirestore.getInstance();
+        db          = FirebaseFirestore.getInstance();
 
+        // Initialize UI elements
         recyclerView = findViewById(R.id.recycler_messages);
         inputMessage = findViewById(R.id.et_message);
-        btnSend = findViewById(R.id.btn_send);
+        btnSend      = findViewById(R.id.btn_send);
         ivUserAvatar = findViewById(R.id.iv_user_avatar);
-        tvUserName = findViewById(R.id.tv_user_name);
-        chatHeader = findViewById(R.id.chat_header);
+        tvUserName   = findViewById(R.id.tv_user_name);
+        chatHeader   = findViewById(R.id.chat_header);
 
+        // Set up RecyclerView
         messageList = new ArrayList<>();
-        adapter = new MessageAdapter(messageList);
+        adapter     = new MessageAdapter(messageList);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
 
+        // Get other user ID from intent
         otherUserId = getIntent().getStringExtra("userId");
         if (currentUser == null || otherUserId == null) {
-            finish();
+            finish(); // Cannot continue without both users
             return;
         }
 
+        // Load user profile and chat info
         loadOtherUserProfile();
         createOrLoadChat();
 
+        // Handle send button
         btnSend.setOnClickListener(v -> sendMessage());
 
+        // Clicking on chat header opens profile
         chatHeader.setOnClickListener(v -> {
             Intent intent = new Intent(ChatActivity.this, UserProfileActivity.class);
             intent.putExtra("userId", otherUserId);
@@ -98,6 +105,7 @@ public class ChatActivity extends AppCompatActivity {
         });
     }
 
+    // Loads the username and avatar of the other user
     private void loadOtherUserProfile() {
         db.collection("users")
                 .document(otherUserId)
@@ -107,6 +115,7 @@ public class ChatActivity extends AppCompatActivity {
                         Map<String, Object> profile = (Map<String, Object>) document.get("profile");
                         String name = (String) profile.get("username");
                         String avatarUrl = (String) profile.get("profileImageUrl");
+
                         tvUserName.setText(name != null ? name : "");
                         if (avatarUrl != null && !avatarUrl.isEmpty()) {
                             Glide.with(this).load(avatarUrl).into(ivUserAvatar);
@@ -115,6 +124,7 @@ public class ChatActivity extends AppCompatActivity {
                 });
     }
 
+    // Checks if a chat exists between users, or creates a new one
     private void createOrLoadChat() {
         DocumentReference currentChatRef = db.collection("users")
                 .document(currentUser.getUid())
@@ -123,10 +133,12 @@ public class ChatActivity extends AppCompatActivity {
 
         currentChatRef.get().addOnSuccessListener(doc -> {
             if (doc.exists() && doc.contains("chatId")) {
+                // Chat already exists
                 chatId = doc.getString("chatId");
-                updateLastSeen(); // ⬅️ mark chat as seen
+                updateLastSeen();
                 loadMessages();
             } else {
+                // Create a new chat
                 chatId = db.collection("Chats").document().getId();
 
                 Map<String, Object> chatMeta = new HashMap<>();
@@ -145,16 +157,18 @@ public class ChatActivity extends AppCompatActivity {
                 db.collection("users").document(otherUserId)
                         .collection("chats").document(currentUser.getUid()).set(otherChatMeta);
 
+                // Create main chat document
                 Map<String, Object> chatDoc = new HashMap<>();
                 chatDoc.put("participants", List.of(currentUser.getUid(), otherUserId));
                 db.collection("Chats").document(chatId).set(chatDoc);
 
-                updateLastSeen(); // ⬅️ mark as seen
+                updateLastSeen();
                 loadMessages();
             }
         });
     }
 
+    // Loads and listens to messages in real-time
     private void loadMessages() {
         CollectionReference messagesRef = db.collection("Chats")
                 .document(chatId)
@@ -163,6 +177,7 @@ public class ChatActivity extends AppCompatActivity {
         messagesRef.orderBy("timestamp")
                 .addSnapshotListener((snapshots, error) -> {
                     if (error != null || snapshots == null) return;
+
                     messageList.clear();
                     for (QueryDocumentSnapshot doc : snapshots) {
                         Message msg = doc.toObject(Message.class);
@@ -171,11 +186,11 @@ public class ChatActivity extends AppCompatActivity {
                     adapter.notifyDataSetChanged();
                     recyclerView.scrollToPosition(messageList.size() - 1);
 
-                    // ✅ Update lastSeen whenever messages are loaded
                     updateLastSeen();
                 });
     }
 
+    // Sends a message to Firestore
     private void sendMessage() {
         String content = inputMessage.getText().toString().trim();
         if (TextUtils.isEmpty(content)) return;
@@ -187,17 +202,19 @@ public class ChatActivity extends AppCompatActivity {
         msgData.put("text", content);
         msgData.put("timestamp", now);
 
+        // Add message to Firestore
         db.collection("Chats")
                 .document(chatId)
                 .collection("messages")
                 .add(msgData)
                 .addOnSuccessListener(ref -> inputMessage.setText(""));
 
+        // Update last message for the chat
         db.collection("Chats")
                 .document(chatId)
                 .update("lastMessage", msgData);
 
-        // ✅ Also update our lastSeen so we don't get notified by mistake
+        // Update lastSeen so we won't get notified again for our own message
         db.collection("users")
                 .document(currentUser.getUid())
                 .collection("chats")
@@ -205,7 +222,7 @@ public class ChatActivity extends AppCompatActivity {
                 .update("lastSeen", now);
     }
 
-    // ✅ Marks that we have seen all messages at this moment
+    // Marks chat as "seen" by the current user
     private void updateLastSeen() {
         db.collection("users")
                 .document(currentUser.getUid())
