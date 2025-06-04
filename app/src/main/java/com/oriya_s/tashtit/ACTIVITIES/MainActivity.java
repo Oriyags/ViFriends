@@ -45,15 +45,16 @@ public class MainActivity extends BaseActivity {
                     }
                 });
 
+        // ✅ Splash delay and redirection
         new Handler().postDelayed(() -> {
             FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
             Intent intent;
             if (currentUser != null) {
-                // User is already logged in
-                intent = new Intent(MainActivity.this, LogInActivity.class);
+                // ✅ Logged-in users go to HomeActivity
+                intent = new Intent(MainActivity.this, HomeActivity.class);
             } else {
-                // User not logged in
+                // 🚪 Not logged in → go to LogInActivity
                 intent = new Intent(MainActivity.this, LogInActivity.class);
             }
 

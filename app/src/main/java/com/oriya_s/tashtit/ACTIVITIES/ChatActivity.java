@@ -124,9 +124,11 @@ public class ChatActivity extends AppCompatActivity {
         currentChatRef.get().addOnSuccessListener(doc -> {
             if (doc.exists() && doc.contains("chatId")) {
                 chatId = doc.getString("chatId");
+                updateLastSeen(); // ⬅️ mark chat as seen
                 loadMessages();
             } else {
                 chatId = db.collection("Chats").document().getId();
+
                 Map<String, Object> chatMeta = new HashMap<>();
                 chatMeta.put("chatId", chatId);
                 chatMeta.put("withUser", otherUserId);
@@ -147,6 +149,7 @@ public class ChatActivity extends AppCompatActivity {
                 chatDoc.put("participants", List.of(currentUser.getUid(), otherUserId));
                 db.collection("Chats").document(chatId).set(chatDoc);
 
+                updateLastSeen(); // ⬅️ mark as seen
                 loadMessages();
             }
         });
@@ -167,6 +170,9 @@ public class ChatActivity extends AppCompatActivity {
                     }
                     adapter.notifyDataSetChanged();
                     recyclerView.scrollToPosition(messageList.size() - 1);
+
+                    // ✅ Update lastSeen whenever messages are loaded
+                    updateLastSeen();
                 });
     }
 
@@ -174,10 +180,12 @@ public class ChatActivity extends AppCompatActivity {
         String content = inputMessage.getText().toString().trim();
         if (TextUtils.isEmpty(content)) return;
 
+        long now = System.currentTimeMillis();
+
         Map<String, Object> msgData = new HashMap<>();
         msgData.put("senderID", currentUser.getUid());
         msgData.put("text", content);
-        msgData.put("timestamp", System.currentTimeMillis());
+        msgData.put("timestamp", now);
 
         db.collection("Chats")
                 .document(chatId)
@@ -188,5 +196,21 @@ public class ChatActivity extends AppCompatActivity {
         db.collection("Chats")
                 .document(chatId)
                 .update("lastMessage", msgData);
+
+        // ✅ Also update our lastSeen so we don't get notified by mistake
+        db.collection("users")
+                .document(currentUser.getUid())
+                .collection("chats")
+                .document(otherUserId)
+                .update("lastSeen", now);
+    }
+
+    // ✅ Marks that we have seen all messages at this moment
+    private void updateLastSeen() {
+        db.collection("users")
+                .document(currentUser.getUid())
+                .collection("chats")
+                .document(otherUserId)
+                .update("lastSeen", System.currentTimeMillis());
     }
 }
