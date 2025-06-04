@@ -19,6 +19,7 @@ import com.google.firebase.messaging.RemoteMessage;
 
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
+    // Called automatically when a new FCM message is received (foreground or background)
     @Override
     public void onMessageReceived(@NonNull RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
@@ -26,27 +27,28 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         String title = null;
         String body = null;
 
-        // ✅ Handle data payload (from Firebase Function)
+        // Handle data payload (custom data from Firebase Cloud Function)
         if (remoteMessage.getData().size() > 0) {
             title = remoteMessage.getData().get("title");
             body = remoteMessage.getData().get("body");
             Log.d("FCM", "Data message received: " + title + " - " + body);
         }
 
-        // ✅ Fallback to notification payload
+        // If data payload is empty, fallback to notification payload
         if ((title == null || body == null) && remoteMessage.getNotification() != null) {
             title = remoteMessage.getNotification().getTitle();
             body = remoteMessage.getNotification().getBody();
             Log.d("FCM", "Notification message received: " + title + " - " + body);
         }
 
+        // Do nothing if there's no usable content
         if (title == null || body == null) return;
 
-        // ✅ Create notification channel for Android 8+
+        // Create notification channel (required for Android 8.0+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
-                    "chat_channel",
-                    "Chat Notifications",
+                    "chat_channel",                     // Channel ID
+                    "Chat Notifications",                  // Channel Name
                     NotificationManager.IMPORTANCE_HIGH
             );
             NotificationManager manager = getSystemService(NotificationManager.class);
@@ -55,16 +57,17 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             }
         }
 
+        // Build the notification content
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "chat_channel")
-                .setSmallIcon(R.drawable.ic_notification)
-                .setContentTitle(title)
-                .setContentText(body)
+                .setSmallIcon(R.drawable.ic_notification)  // App's notification icon
+                .setContentTitle(title)                    // Notification title
+                .setContentText(body)                      // Notification body
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true);
 
         NotificationManagerCompat managerCompat = NotificationManagerCompat.from(this);
 
-        // ✅ Check POST_NOTIFICATIONS permission (Android 13+)
+        // Android 13+ requires runtime permission to post notifications
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
                     != PackageManager.PERMISSION_GRANTED) {
@@ -73,15 +76,20 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             }
         }
 
+        // Show the notification with ID 1001
         managerCompat.notify(1001, builder.build());
     }
 
+    // Called when a new FCM token is generated (e.g., app reinstall or token refresh)
     @Override
     public void onNewToken(@NonNull String token) {
         super.onNewToken(token);
 
+        // Get the currently logged-in user
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
         if (user != null) {
+            // Update the user's document with the new FCM token
             FirebaseFirestore.getInstance()
                     .collection("users")
                     .document(user.getUid())
@@ -91,6 +99,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                     .addOnFailureListener(e ->
                             Log.e("FCM", "Failed to update FCM token: ", e));
         } else {
+            // Log it for debugging – user may not be signed in yet
             Log.d("FCM", "Token generated but user not signed in: " + token);
         }
     }
