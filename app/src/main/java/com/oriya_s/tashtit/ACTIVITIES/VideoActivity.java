@@ -24,6 +24,7 @@ public class VideoActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_video);
 
@@ -34,38 +35,45 @@ public class VideoActivity extends AppCompatActivity {
         });
 
         initializeViews();
+
         setViewModel();
     }
 
+    // Binds the start button and sets its click behavior
     protected void initializeViews() {
         startVideoCall = findViewById(R.id.btn_start_call);
 
+        // When the button is clicked, start the Jitsi video call
         startVideoCall.setOnClickListener(v -> startVideo());
     }
 
+    // Starts a video call using Jitsi Meet
     private void startVideo() {
         try {
+            // Define the Jitsi server URL
             URL serverURL = new URL("https://meet.jit.si");
 
-            // Fixed Room Name - For All Devices
+            // Set a fixed room name so all users join the same video room
             String roomName = "TashtitRoomMainVideo123456";
 
+            // Configure the video meeting options
             JitsiMeetConferenceOptions options = new JitsiMeetConferenceOptions.Builder()
                     .setServerURL(serverURL)
                     .setRoom(roomName)
-                    .setFeatureFlag("welcomepage.enabled", false) // No welcome page
+                    .setFeatureFlag("welcomepage.enabled", false)
                     .setAudioMuted(false)
                     .setVideoMuted(false)
                     .build();
 
+            // Launch the Jitsi Meet activity with these options
             JitsiMeetActivity.launch(this, options);
 
         } catch (MalformedURLException e) {
+            // Catch and print error if server URL is malformed
             e.printStackTrace();
         }
     }
 
-    protected void setViewModel() {
-        // If needed in the future
-    }
+    // Placeholder for future ViewModel setup (currently unused)
+    protected void setViewModel() {}
 }
