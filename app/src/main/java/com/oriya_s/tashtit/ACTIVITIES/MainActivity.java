@@ -21,7 +21,9 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         EdgeToEdge.enable(this);
+
         getLayoutInflater().inflate(R.layout.activity_main, findViewById(R.id.content_frame));
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -30,13 +32,14 @@ public class MainActivity extends BaseActivity {
             return insets;
         });
 
-        // ✅ Save FCM token to Firestore if user is logged in
+        // Get and store Firebase Cloud Messaging (FCM) token if user is logged in
         FirebaseMessaging.getInstance().getToken()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         String token = task.getResult();
                         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
                         if (currentUser != null) {
+                            // Save the token in the Firestore document for this user
                             FirebaseFirestore.getInstance()
                                     .collection("users")
                                     .document(currentUser.getUid())
@@ -45,30 +48,38 @@ public class MainActivity extends BaseActivity {
                     }
                 });
 
-        // ✅ Splash delay and redirection
+        // Show splash screen for 2 seconds, then redirect to Home or Login screen
         new Handler().postDelayed(() -> {
             FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
             Intent intent;
             if (currentUser != null) {
-                // ✅ Logged-in users go to HomeActivity
+                // If user is already logged in, go to the home screen
                 intent = new Intent(MainActivity.this, HomeActivity.class);
             } else {
-                // 🚪 Not logged in → go to LogInActivity
+                // If user is not logged in, go to the login screen
                 intent = new Intent(MainActivity.this, LogInActivity.class);
             }
 
             startActivity(intent);
             finish();
-        }, 2000); // 2 seconds splash
+        }, 2000);
+    }
+
+    // These override methods are required by BaseActivity but are not used in MainActivity
+
+    @Override
+    protected void initializeViews() {
+        // No views to initialize in this splash screen
     }
 
     @Override
-    protected void initializeViews() {}
+    protected void setListeners() {
+        // No listeners needed in splash screen
+    }
 
     @Override
-    protected void setListeners() {}
-
-    @Override
-    protected void setViewModel() {}
+    protected void setViewModel() {
+        // No ViewModel setup needed here
+    }
 }
