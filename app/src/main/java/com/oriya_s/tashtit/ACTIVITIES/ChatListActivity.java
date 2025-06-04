@@ -25,11 +25,13 @@ import java.util.Map;
 
 public class ChatListActivity extends AppCompatActivity {
 
-    private RecyclerView recyclerView;
+    // RecyclerView & Adapter for showing list of chat partners
+    private RecyclerView       recyclerView;
     private FriendsListAdapter adapter;
-    private List<Friend> chatPreviews;
+    private List<Friend>       chatPreviews;
 
-    private FirebaseUser currentUser;
+    // Firebase references
+    private FirebaseUser      currentUser;
     private FirebaseFirestore db;
 
     @Override
@@ -37,25 +39,36 @@ public class ChatListActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat_list);
 
+        // Set up RecyclerView and layout
         recyclerView = findViewById(R.id.recycler_chat_list);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
+        // Initialize chat preview list and adapter
         chatPreviews = new ArrayList<>();
-        adapter = new FriendsListAdapter(this, chatPreviews, FirebaseFirestore.getInstance(), FirebaseAuth.getInstance().getCurrentUser());
+        adapter = new FriendsListAdapter(
+                this,
+                chatPreviews,
+                FirebaseFirestore.getInstance(),
+                FirebaseAuth.getInstance().getCurrentUser()
+        );
         recyclerView.setAdapter(adapter);
 
-        db = FirebaseFirestore.getInstance();
+        // Initialize Firebase
+        db          = FirebaseFirestore.getInstance();
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
+        // When a friend in the list is clicked → open chat with them
         adapter.setOnFriendClickListener((view, friend) -> {
             Intent intent = new Intent(ChatListActivity.this, ChatActivity.class);
             intent.putExtra("userId", friend.getFriendID());
             startActivity(intent);
         });
 
+        // Load chat list from Firestore
         loadChatList();
     }
 
+    // Loads all chat partners of the current user
     private void loadChatList() {
         if (currentUser == null) return;
 
@@ -65,22 +78,40 @@ public class ChatListActivity extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(query -> {
                     chatPreviews.clear();
+
                     for (QueryDocumentSnapshot doc : query) {
+                        // Each chat document contains a "withUser" field (the ID of the other participant)
                         Map<String, Object> data = doc.getData();
                         String withUserId = (String) data.get("withUser");
+
+                        // Fetch profile details of the other user
                         db.collection("users")
                                 .document(withUserId)
                                 .get()
                                 .addOnSuccessListener(userDoc -> {
                                     DocumentSnapshot profileDoc = userDoc;
+                                    // Get the username and profile image from the embedded "profile" map
                                     String name = profileDoc.get("profile.username", String.class);
                                     String avatar = profileDoc.get("profile.profileImageUrl", String.class);
-                                    Friend f = new Friend(withUserId, name, avatar, currentUser.getUid(), "chat");
+
+                                    // Create a Friend object for the adapter
+                                    Friend f = new Friend(
+                                            withUserId,
+                                            name,
+                                            avatar,
+                                            currentUser.getUid(),
+                                            "chat"
+                                    );
+
+                                    // Add to the list and notify the adapter
                                     chatPreviews.add(f);
                                     adapter.notifyDataSetChanged();
                                 });
                     }
                 })
-                .addOnFailureListener(e -> Toast.makeText(this, "Failed to load chats", Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> {
+                    // Show error if loading chats failed
+                    Toast.makeText(this, "Failed to load chats", Toast.LENGTH_SHORT).show();
+                });
     }
 }
