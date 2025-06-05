@@ -2,6 +2,7 @@ package com.oriya_s.tashtit.ACTIVITIES;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.speech.tts.TextToSpeech;             // *** TTS import
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.EditText;
@@ -32,6 +33,7 @@ import com.oriya_s.tashtit.R;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class ChatActivity extends AppCompatActivity {
@@ -53,11 +55,27 @@ public class ChatActivity extends AppCompatActivity {
     private ImageView    ivUserAvatar;
     private TextView     tvUserName;
 
+    // *** TTS ***
+    private TextToSpeech tts;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_chat);
+
+        // Initialize TextToSpeech
+        tts = new TextToSpeech(this, status -> {
+            if (status == TextToSpeech.SUCCESS) {
+                // Set language to default locale; check for missing data or unsupported language
+                int result = tts.setLanguage(Locale.getDefault());
+                if (result == TextToSpeech.LANG_MISSING_DATA
+                        || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    // You could show a Toast or log a warning here
+                }
+            }
+        });
+        // *** End TTS init ***
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -79,7 +97,8 @@ public class ChatActivity extends AppCompatActivity {
 
         // Set up RecyclerView
         messageList = new ArrayList<>();
-        adapter     = new MessageAdapter(messageList);
+        // Pass 'tts' into the adapter constructor
+        adapter     = new MessageAdapter(messageList, tts);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
 
@@ -103,6 +122,16 @@ public class ChatActivity extends AppCompatActivity {
             intent.putExtra("userId", otherUserId);
             startActivity(intent);
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        // Shut down TTS to release resources
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
+        }
+        super.onDestroy();
     }
 
     // Loads the username and avatar of the other user

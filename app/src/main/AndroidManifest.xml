@@ -1,17 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <!-- Permissions for video call -->
+
+    <!-- Optional camera feature for devices (not required for app to run) -->
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
 
+    <!-- Required to access the internet for Firebase, Jitsi Meet, and APIs -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Needed to access the camera (used in video calls with Jitsi Meet) -->
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" /> <!-- Permissions for Firebase Cloud Messaging -->
+
+    <!-- Needed to record audio (for video and voice calls) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Keeps the device awake while receiving Firebase messages -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- Allows the device to vibrate on notifications -->
     <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" /> <!-- ✅ Permission for Android 13+ notification -->
+
+    <!-- Permission required to receive Firebase Cloud Messaging (FCM) -->
+    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
+
+    <!-- Required on Android 13+ to post notifications at runtime -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
@@ -24,13 +38,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.TASHTIT"
         tools:targetApi="31">
-        <activity
-            android:name=".ACTIVITIES.FriendSelectorActivity"
-            android:exported="false" />
 
+        <!-- Meta-data tag to provide the Google Maps API key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="@string/google_maps_key" /> <!-- Firebase Messaging Service -->
+            android:value="@string/google_maps_key" />
+
+        <!-- Firebase Messaging background service -->
         <service
             android:name=".MyFirebaseMessagingService"
             android:exported="false">
@@ -39,60 +53,32 @@
             </intent-filter>
         </service>
 
-        <activity
-            android:name=".ACTIVITIES.AttendeesActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ACTIVITIES.EventResponseActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ACTIVITIES.SettingsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ACTIVITIES.ChatListActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ACTIVITIES.ChatActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ACTIVITIES.PendingRequestsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ACTIVITIES.UserProfileActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ACTIVITIES.AddEventActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ACTIVITIES.VideoActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ACTIVITIES.FriendsListActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ACTIVITIES.HomeActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ACTIVITIES.CreateAccountActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ACTIVITIES.LogInActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ACTIVITIES.BASE.BaseActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ACTIVITIES.MapPickerActivity"
-            android:exported="false" />
+        <!-- All your app activities -->
+        <activity android:name=".ACTIVITIES.FriendSelectorActivity" android:exported="false" />
+        <activity android:name=".ACTIVITIES.AttendeesActivity" android:exported="false" />
+        <activity android:name=".ACTIVITIES.EventResponseActivity" android:exported="false" />
+        <activity android:name=".ACTIVITIES.SettingsActivity" android:exported="false" />
+        <activity android:name=".ACTIVITIES.ChatListActivity" android:exported="false" />
+        <activity android:name=".ACTIVITIES.ChatActivity" android:exported="false" />
+        <activity android:name=".ACTIVITIES.PendingRequestsActivity" android:exported="false" />
+        <activity android:name=".ACTIVITIES.UserProfileActivity" android:exported="false" />
+        <activity android:name=".ACTIVITIES.AddEventActivity" android:exported="false" />
+        <activity android:name=".ACTIVITIES.VideoActivity" android:exported="false" />
+        <activity android:name=".ACTIVITIES.FriendsListActivity" android:exported="false" />
+        <activity android:name=".ACTIVITIES.HomeActivity" android:exported="false" />
+        <activity android:name=".ACTIVITIES.CreateAccountActivity" android:exported="false" />
+        <activity android:name=".ACTIVITIES.LogInActivity" android:exported="false" />
+        <activity android:name=".ACTIVITIES.BASE.BaseActivity" android:exported="false" />
+        <activity android:name=".ACTIVITIES.MapPickerActivity" android:exported="false" />
+
+        <!-- ✅ Main launcher activity (entry point when app starts) -->
         <activity
             android:name=".ACTIVITIES.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
     </application>
-
 </manifest>

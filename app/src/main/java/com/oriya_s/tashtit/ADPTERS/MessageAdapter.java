@@ -1,5 +1,6 @@
 package com.oriya_s.tashtit.ADPTERS;
 
+import android.speech.tts.TextToSpeech;       // *** TTS import
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,13 +20,14 @@ import java.util.Locale;
 
 public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageViewHolder> {
 
-    private final List<Message> messageList;
-    // ID of the current user (used to check if a message is sent or received)
-    private final String        currentUserId;
+    private final List<Message>   messageList;
+    private final String          currentUserId;
+    private final TextToSpeech    tts;         // *** TTS instance ***
 
-    // Constructor
-    public MessageAdapter(List<Message> messageList) {
+    // Modified constructor to accept TextToSpeech
+    public MessageAdapter(List<Message> messageList, TextToSpeech tts) {
         this.messageList   = messageList;
+        this.tts           = tts;
         this.currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
     }
 
@@ -35,25 +37,36 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         return messageList.get(position).getSenderID().equals(currentUserId) ? 1 : 0;
     }
 
-    // Inflates the appropriate layout (sent or received) based on view type
+    // Inflates the appropriate layout (sent or received) based on viewType
     @NonNull
     @Override
     public MessageViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        int layoutId = (viewType == 1) ? R.layout.item_message_sent : R.layout.item_message_received;
+        int layoutId = (viewType == 1) ? R.layout.item_message_sent
+                : R.layout.item_message_received;
         View view = LayoutInflater.from(parent.getContext()).inflate(layoutId, parent, false);
         return new MessageViewHolder(view);
     }
 
-    // Binds each message's text and formatted time to the views
+    // Binds each message's text and time; also sets up click-to-speak
     @Override
     public void onBindViewHolder(@NonNull MessageViewHolder holder, int position) {
         Message msg = messageList.get(position);
         holder.messageText.setText(msg.getText());
 
-        // Format timestamp to "HH:mm" format (e.g., "14:23")
+        // Format timestamp to "HH:mm"
         long timestamp = msg.getTimestamp();
-        String timeFormatted = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(timestamp));
+        String timeFormatted = new SimpleDateFormat("HH:mm", Locale.getDefault())
+                .format(new Date(timestamp));
         holder.messageTime.setText(timeFormatted);
+
+        // *** Set click‐to‐speak on the message TextView ***
+        holder.messageText.setOnClickListener(v -> {
+            String toSpeak = msg.getText();
+            if (toSpeak != null && !toSpeak.isEmpty() && tts != null) {
+                // QUEUE_FLUSH ensures any current speech is replaced
+                tts.speak(toSpeak, TextToSpeech.QUEUE_FLUSH, null, "MSG_ID_" + position);
+            }
+        });
     }
 
     @Override
